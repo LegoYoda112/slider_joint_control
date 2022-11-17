@@ -37,6 +37,8 @@ class MotorController : public rclcpp::Node
     torque_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>
     ("slider/control/joint_torque_goals", 10, std::bind(&MotorController::torque_callback, this, _1));
 
+    leg_motor_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("slider/control/motor_states", 10);
+
     // Make Kp subscriber
     // Make Kd subscriber
 
@@ -51,7 +53,7 @@ class MotorController : public rclcpp::Node
     connect_and_enable();
 
     // Start the control loop timer
-    // control_loop_timer = this->create_wall_timer(10ms, std::bind(&JointController::motor_control_loop, this));
+    control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
   }
 
   void disable_all()
@@ -178,7 +180,22 @@ class MotorController : public rclcpp::Node
     // ==== CONTROL MODES
     if(control_mode == disabled)
     {
-      // Send disable
+      RCLCPP_INFO_STREAM(this->get_logger(), "Sending 0 torque goals");
+
+
+      // Soft disable
+      right_roll.send_torque_goal(0.0);
+      right_pitch.send_torque_goal(0.0);
+      right_slide.send_torque_goal(0.0);
+      right_inner_ankle.send_torque_goal(0.0);
+      right_outer_ankle.send_torque_goal(0.0);
+
+      left_roll.send_torque_goal(0.0);
+      left_pitch.send_torque_goal(0.0);
+      left_slide.send_torque_goal(0.0);
+      left_inner_ankle.send_torque_goal(0.0);
+      left_outer_ankle.send_torque_goal(0.0);
+      
     }else if(control_mode == position)
     {
       // Send position goals
@@ -187,7 +204,12 @@ class MotorController : public rclcpp::Node
       // Send torque goals
     }
 
+    RCLCPP_INFO_STREAM(this->get_logger(), "Updating motor states");
+    // Publish motor states
+    update_and_publish_motor_states();
 
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Checking watchdog");
 
     // ===== WATCHDOG
 
@@ -209,12 +231,68 @@ class MotorController : public rclcpp::Node
     }
   }
 
+  void update_and_publish_motor_states()
+  {
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Reading motors");
+    
+    // Update 
+    right_leg_motors.read_all();
+    left_leg_motors.read_all();
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Making joint state objects");
+
+    // Get joint states
+    sensor_msgs::msg::JointState leg_motor_states = right_leg_motors.get_joint_states();
+    sensor_msgs::msg::JointState left_leg_joint_states = left_leg_motors.get_joint_states();
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Concatining joint states");
+
+    // Concatinate joint efforts
+    leg_motor_states.effort.insert(
+        leg_motor_states.effort.end(),
+        std::make_move_iterator(left_leg_joint_states.effort.begin()),
+        std::make_move_iterator(left_leg_joint_states.effort.end())
+    );
+
+    // Concatinate joint velocities
+    leg_motor_states.velocity.insert(
+        leg_motor_states.velocity.end(),
+        std::make_move_iterator(left_leg_joint_states.velocity.begin()),
+        std::make_move_iterator(left_leg_joint_states.velocity.end())
+    );
+
+    // Concatinate joint positions
+    leg_motor_states.position.insert(
+        leg_motor_states.position.end(),
+        std::make_move_iterator(left_leg_joint_states.position.begin()),
+        std::make_move_iterator(left_leg_joint_states.position.end())
+    );
+    
+    // Concatinate joint names
+    leg_motor_states.name.insert(
+        leg_motor_states.name.end(),
+        std::make_move_iterator(left_leg_joint_states.name.begin()),
+        std::make_move_iterator(left_leg_joint_states.name.end())
+    );
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Setting header");
+    leg_motor_states.header.stamp = get_clock()->now();
+
+    RCLCPP_INFO_STREAM(this->get_logger(), "Publishing");
+    leg_motor_state_publisher_->publish(leg_motor_states);
+
+  }
+
 
   // Subscribers
   rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr position_sub_;
   rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr torque_sub_;
   rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr Kp_sub_;
   rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr Kd_sub_;
+
+  // Publishers
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr leg_motor_state_publisher_;
 
   // Timer
   rclcpp::TimerBase::SharedPtr control_loop_timer;
