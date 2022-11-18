@@ -14,6 +14,11 @@ find_package(sensor_msgs REQUIRED)
 # Python build
 find_package(rclpy REQUIRED)
 
+
+install(DIRECTORY launch urdf rviz meshes
+    DESTINATION share/${PROJECT_NAME}
+)
+
 add_executable(motor_controller src/motor_controller.cpp src/MotorManager.cpp src/TMotor.cpp src/canbus.cpp)
 
 target_include_directories(motor_controller PUBLIC
@@ -27,6 +32,7 @@ ament_target_dependencies(motor_controller rclcpp std_msgs sensor_msgs)
 install(PROGRAMS
   scripts/test_pub.py
   scripts/can_setup.sh
+  scripts/slider_joint_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

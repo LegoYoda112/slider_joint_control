@@ -9,7 +9,7 @@ class MinimalPublisher(Node):
 
     def __init__(self):
         super().__init__('minimal_publisher')
-        self.publisher = self.create_publisher(Float32MultiArray, '/slider/control/joint_position_goals', 10)
+        self.publisher = self.create_publisher(Float32MultiArray, '/slider/control/joint/position_goals', 10)
         timer_period = 0.5
         self.timer = self.create_timer(timer_period, self.timer_callback)
 

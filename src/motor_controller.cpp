@@ -31,13 +31,13 @@ class MotorController : public rclcpp::Node
 
     // Make position subscriber
     position_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>
-    ("slider/control/joint_position_goals", 10, std::bind(&MotorController::position_callback, this, _1));
+    ("slider/control/joint/position_goals", 10, std::bind(&MotorController::position_callback, this, _1));
 
     // Make torque subscriber
     torque_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>
-    ("slider/control/joint_torque_goals", 10, std::bind(&MotorController::torque_callback, this, _1));
+    ("slider/control/joint/torque_goals", 10, std::bind(&MotorController::torque_callback, this, _1));
 
-    leg_motor_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("slider/control/motor_states", 10);
+    leg_motor_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("slider/control/motor/states", 10);
 
     // Make Kp subscriber
     // Make Kd subscriber
@@ -50,7 +50,13 @@ class MotorController : public rclcpp::Node
     setup_motors();
 
     // Home the robot
-    connect_and_enable();
+    connect();
+    enable();
+
+    zero_all();
+
+    // Try zeroing to see what happens
+    // zero_all();
 
     // Start the control loop timer
     control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
@@ -84,17 +90,34 @@ class MotorController : public rclcpp::Node
     left_leg_motors.print_all_motors();
   }
 
+  void zero_all()
+  {
+    right_roll.send_zero_encoder();
+    right_pitch.send_zero_encoder();
+    right_slide.send_zero_encoder();
 
-  void connect_and_enable()
+    left_roll.send_zero_encoder();
+    left_pitch.send_zero_encoder();
+    left_slide.send_zero_encoder();
+  }
+
+
+  void connect()
   {
     // Do the homing thing
     RCLCPP_INFO(this->get_logger(), "Connecting to right motors");
     right_leg_motors.connect();
-    RCLCPP_INFO(this->get_logger(), "Enabling right motors");
-    right_leg_motors.enable_all();
 
     RCLCPP_INFO(this->get_logger(), "Connecting to left motors");
     left_leg_motors.connect();
+  }
+
+  void enable()
+  {
+    // Enable
+    RCLCPP_INFO(this->get_logger(), "Enabling right motors");
+    right_leg_motors.enable_all();
+
     RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
     left_leg_motors.enable_all();
   }

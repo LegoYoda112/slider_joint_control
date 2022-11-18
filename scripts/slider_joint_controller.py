@@ -1,0 +1,117 @@
+#!/usr/bin/env python3 
+
+import rclpy
+from rclpy.node import Node
+
+from std_msgs.msg import Float32MultiArray
+from sensor_msgs.msg import JointState
+
+class SliderJointController(Node):
+
+    def __init__(self):
+        super().__init__('slider_joint_controller')
+
+        
+        # Make publishers
+        self.position_publisher = self.create_publisher(Float32MultiArray, '/slider/control/motor/position_goals', 10)
+        self.torque_publisher = self.create_publisher(Float32MultiArray, '/slider/control/motor/torque_goals', 10)
+
+        self.joint_state_publisher = self.create_publisher(JointState, '/joint_states', 10)
+
+        # Make subscribers
+        self.position_subscriber = self.create_subscription(
+            Float32MultiArray, 
+            '/slider/control/joint/position_goals', 
+            self.position_goal_callback,
+            10)
+
+        self.torque_subscriber = self.create_subscription(
+            Float32MultiArray, 
+            '/slider/control/joint/torque_goals', 
+            self.torque_goal_callback,
+            10)
+
+        self.motor_state_subscriber = self.create_subscription(
+            JointState, 
+            'slider/control/motor/states', 
+            self.motor_state_callback,
+            10)
+
+        # Transmission ratio between slide motor and slide joint
+        # = pulley pitch diameter?
+        # TODO: do exactly
+        self.slide_transmission_ratio = 0.013
+        self.right_slide_id = 2
+        self.left_slide_id = 7
+
+    
+    def position_goal_callback(self, msg):
+
+        # Some joints do not need to be adjusted, so we start from the original message
+        # TODO: I don't really like this, I should probably fix
+        motor_position_goals = msg.data
+
+        # Apply the slide transmission ratio to the position goal
+        # TODO: I think this is the wrong way around
+        motor_position_goals[self.right_slide_id] *= -self.slide_transmission_ratio
+        motor_position_goals[self.left_slide_id] *= self.slide_transmission_ratio
+
+        self.publish_position_goals(motor_position_goals)
+
+    def torque_goal_callback(self, msg):
+        
+        # Some joints do not need to be adjusted, so we start from the original message
+        # TODO: I don't really like this, I should probably fix
+        motor_torque_goals = msg.data
+
+        # Apply the slide transmission ratio to the torque goal
+        motor_torque_goals[self.right_slide_id] *= -self.slide_transmission_ratio
+        motor_torque_goals[self.left_slide_id] *= self.slide_transmission_ratio
+
+        self.publish_torque_goals(motor_torque_goals)
+
+    # When we recive a motor state message, translate it into a joint state message
+    def motor_state_callback(self, msg):
+        joint_states = msg
+
+        joint_states.position[self.right_slide_id] *= -self.slide_transmission_ratio
+        joint_states.velocity[self.right_slide_id] *= -self.slide_transmission_ratio
+        joint_states.effort[self.right_slide_id] /= -self.slide_transmission_ratio
+
+        joint_states.position[self.left_slide_id] *= self.slide_transmission_ratio
+        joint_states.velocity[self.left_slide_id] *= self.slide_transmission_ratio
+        joint_states.effort[self.left_slide_id] /= self.slide_transmission_ratio
+
+        self.joint_state_publisher.publish(joint_states)
+
+        
+    
+
+    # Publish position goals
+    def publish_position_goals(self, values):
+        msg = Float32MultiArray()
+        msg.data = values
+        self.position_publisher.publish(msg)
+        self.get_logger().info("Published position goals")
+
+    # Publish torque goals
+    def publish_torque_goals(self, values):
+        msg = Float32MultiArray()
+        msg.data = values
+        self.torque_publisher.publish(msg)
+        self.get_logger().info("Published torque goals")
+
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    slider_joint_controller = SliderJointController()
+
+    rclpy.spin(slider_joint_controller)
+
+    slider_joint_controller.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ =='__main__':
+    main()
