@@ -29,6 +29,10 @@ ament_target_dependencies(motor_controller rclcpp std_msgs sensor_msgs)
 
 # ament_python_install_package(${PROJECT_NAME})
 
+install(DIRECTORY scripts/ankle
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 install(PROGRAMS
   scripts/test_pub.py
   scripts/can_setup.sh

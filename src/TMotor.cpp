@@ -101,7 +101,8 @@ void TMotor::unpack_motor_response(uint8_t* data, float &p, float &v, float &i){
     int i_int = ((data[4]&0xF) << 8)|data[5];
 
     // Converts to floats
-    p = uint_to_float(p_int, P_MIN, P_MAX, 16);
+    // I don't really like putting the zero offset at this level, but here we are
+    p = uint_to_float(p_int, P_MIN, P_MAX, 16) - this->zero_offset;
     v = uint_to_float(v_int, V_MIN, V_MAX, 12);
     i = uint_to_float(i_int, T_MIN, T_MAX, 12);
 }
@@ -201,7 +202,7 @@ void TMotor::send_enable(){
     this->read_motor_response();
 
     cout << "Sent enable: " << this->joint_name << endl;
-
+    cout << this->kP << endl;
 }
 
 // Send the disable command
@@ -253,6 +254,9 @@ void TMotor::send_position_goal(float position, float torque_feedforward){
     }else if( position < this->MIN ){
         position = this->MIN;
     }
+
+    // cout << "Sending position goal" << endl;
+    // cout << this->kP << endl;
 
     this->send_motor_cmd(position + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward);
 

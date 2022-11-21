@@ -31,11 +31,11 @@ class MotorController : public rclcpp::Node
 
     // Make position subscriber
     position_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>
-    ("slider/control/joint/position_goals", 10, std::bind(&MotorController::position_callback, this, _1));
+    ("slider/control/motor/position_goals", 10, std::bind(&MotorController::position_callback, this, _1));
 
     // Make torque subscriber
     torque_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>
-    ("slider/control/joint/torque_goals", 10, std::bind(&MotorController::torque_callback, this, _1));
+    ("slider/control/motor/torque_goals", 10, std::bind(&MotorController::torque_callback, this, _1));
 
     leg_motor_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>("slider/control/motor/states", 10);
 
@@ -49,14 +49,18 @@ class MotorController : public rclcpp::Node
     // Sets up the motors
     setup_motors();
 
-    // Home the robot
+    // Connect to the robot and enable motors
     connect();
     enable();
 
-    zero_all();
+    // Set zero offsets
+    set_zero_offsets();
 
-    // Try zeroing to see what happens
-    // zero_all();
+    // Home
+    home();
+
+    // Set constants
+    set_constants();
 
     // Start the control loop timer
     control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
@@ -72,18 +76,19 @@ class MotorController : public rclcpp::Node
 
   void setup_motors()
   {
-    // Adds all joints to the manager
+    // Add all motors to the manager
+    left_leg_motors.add_motor(&left_roll);
+    left_leg_motors.add_motor(&left_pitch);
+    left_leg_motors.add_motor(&left_slide);
+    left_leg_motors.add_motor(&left_inner_ankle);
+    left_leg_motors.add_motor(&left_outer_ankle);
+
     right_leg_motors.add_motor(&right_roll);
     right_leg_motors.add_motor(&right_pitch);
     right_leg_motors.add_motor(&right_slide);
     right_leg_motors.add_motor(&right_inner_ankle);
     right_leg_motors.add_motor(&right_outer_ankle);
 
-    left_leg_motors.add_motor(&left_roll);
-    left_leg_motors.add_motor(&left_pitch);
-    left_leg_motors.add_motor(&left_slide);
-    left_leg_motors.add_motor(&left_inner_ankle);
-    left_leg_motors.add_motor(&left_outer_ankle);
 
     // Print out motor names
     right_leg_motors.print_all_motors();
@@ -95,10 +100,30 @@ class MotorController : public rclcpp::Node
     right_roll.send_zero_encoder();
     right_pitch.send_zero_encoder();
     right_slide.send_zero_encoder();
+    right_inner_ankle.send_zero_encoder();
+    right_outer_ankle.send_zero_encoder();
 
     left_roll.send_zero_encoder();
     left_pitch.send_zero_encoder();
     left_slide.send_zero_encoder();
+    left_inner_ankle.send_zero_encoder();
+    left_outer_ankle.send_zero_encoder();
+  }
+
+  // Sets the zero offset of each joint
+  void set_zero_offsets()
+  {
+    right_roll.set_zero_offset(0.01);
+    right_pitch.set_zero_offset(-0.056);
+    right_slide.set_zero_offset(-0.48);
+    right_inner_ankle.set_zero_offset(0.294);
+    right_outer_ankle.set_zero_offset(-0.521);
+
+    left_roll.set_zero_offset(0.0045);
+    left_pitch.set_zero_offset(0.293);
+    left_slide.set_zero_offset(0.007);
+    left_inner_ankle.set_zero_offset(0.077);
+    left_outer_ankle.set_zero_offset(-0.232);
   }
 
 
@@ -120,6 +145,29 @@ class MotorController : public rclcpp::Node
 
     RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
     left_leg_motors.enable_all();
+
+
+  }
+
+  void home()
+  {
+    left_slide.run_to_home(1.0);
+  }
+
+  void set_constants()
+  {
+    // Set constants
+    left_roll.set_constants(10.0, 0.5);
+    left_pitch.set_constants(10.0, 0.5);
+    left_slide.set_constants(1.0, 0.5);
+    left_inner_ankle.set_constants(2.0, 0.5);
+    left_outer_ankle.copy_constants(&left_inner_ankle);
+
+    right_roll.copy_constants(&left_roll);
+    right_pitch.copy_constants(&left_pitch);
+    right_slide.copy_constants(&left_slide);
+    right_inner_ankle.copy_constants(&left_inner_ankle);
+    right_outer_ankle.copy_constants(&left_inner_ankle);
   }
 
   // Position control callback
@@ -205,7 +253,6 @@ class MotorController : public rclcpp::Node
     {
       RCLCPP_INFO_STREAM(this->get_logger(), "Sending 0 torque goals");
 
-
       // Soft disable
       right_roll.send_torque_goal(0.0);
       right_pitch.send_torque_goal(0.0);
@@ -220,8 +267,36 @@ class MotorController : public rclcpp::Node
       left_outer_ankle.send_torque_goal(0.0);
       
     }else if(control_mode == position)
-    {
+    { 
+      RCLCPP_INFO_STREAM(this->get_logger(), "Sending position goals");
+
+      // set constnats
+      // TODO: Figure out why it only works here
+      left_roll.set_constants(200.0, 3.0);
+      left_pitch.set_constants(300.0, 2.0);
+      left_slide.set_constants(1.0, 0.5);
+      left_inner_ankle.set_constants(50.0, 2.0);
+      left_outer_ankle.copy_constants(&left_inner_ankle);
+
+      right_roll.copy_constants(&left_roll);
+      right_pitch.copy_constants(&left_pitch);
+      right_slide.copy_constants(&left_slide);
+      right_inner_ankle.copy_constants(&left_inner_ankle);
+      right_outer_ankle.copy_constants(&left_inner_ankle);
+
       // Send position goals
+      right_roll.send_position_goal(position_goals[0]);
+      right_pitch.send_position_goal(position_goals[1]);
+      right_slide.send_position_goal(position_goals[2]);
+      right_inner_ankle.send_position_goal(position_goals[3]);
+      right_outer_ankle.send_position_goal(position_goals[4]);
+
+      left_roll.send_position_goal(position_goals[5]);
+      left_pitch.send_position_goal(position_goals[6]);
+      left_slide.send_position_goal(position_goals[7]);
+      left_inner_ankle.send_position_goal(position_goals[8]);
+      left_outer_ankle.send_position_goal(position_goals[9]);
+
     }else if(control_mode == torque)
     {
       // Send torque goals

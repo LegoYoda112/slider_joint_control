@@ -1,16 +1,23 @@
 #!/usr/bin/env python3 
 
+# Import ROS2 packages
 import rclpy
 from rclpy.node import Node
 
+# Import ROS2 messages
 from std_msgs.msg import Float32MultiArray
 from sensor_msgs.msg import JointState
+
+# Import Ankle kinematics
+import ankle.ForwardKinematics
+import ankle.InverseKinematics
 
 class SliderJointController(Node):
 
     def __init__(self):
         super().__init__('slider_joint_controller')
 
+        self.get_logger().info("Starting joint controller")
         
         # Make publishers
         self.position_publisher = self.create_publisher(Float32MultiArray, '/slider/control/motor/position_goals', 10)
@@ -44,6 +51,12 @@ class SliderJointController(Node):
         self.right_slide_id = 2
         self.left_slide_id = 7
 
+        # Ankle motor IDs
+        self.right_inner_ankle_id = 3
+        self.right_outer_ankle_id = 4
+        self.left_inner_ankle_id = 8
+        self.left_outer_ankle_id = 9
+
     
     def position_goal_callback(self, msg):
 
@@ -55,6 +68,15 @@ class SliderJointController(Node):
         # TODO: I think this is the wrong way around
         motor_position_goals[self.right_slide_id] *= -self.slide_transmission_ratio
         motor_position_goals[self.left_slide_id] *= self.slide_transmission_ratio
+
+        right_ankle_goals = ankle.InverseKinematics.ik(motor_position_goals[3], motor_position_goals[4])
+        left_ankle_goals = ankle.InverseKinematics.ik(motor_position_goals[8], motor_position_goals[9])
+        
+        motor_position_goals[self.right_outer_ankle_id] = -right_ankle_goals[0]
+        motor_position_goals[self.right_inner_ankle_id] = right_ankle_goals[1]
+
+        motor_position_goals[self.left_inner_ankle_id] = -left_ankle_goals[0]
+        motor_position_goals[self.left_outer_ankle_id] = left_ankle_goals[1]
 
         self.publish_position_goals(motor_position_goals)
 
@@ -74,18 +96,42 @@ class SliderJointController(Node):
     def motor_state_callback(self, msg):
         joint_states = msg
 
-        joint_states.position[self.right_slide_id] *= -self.slide_transmission_ratio
-        joint_states.velocity[self.right_slide_id] *= -self.slide_transmission_ratio
-        joint_states.effort[self.right_slide_id] /= -self.slide_transmission_ratio
-
+        # ======= Transform slide from motor to joint space
         joint_states.position[self.left_slide_id] *= self.slide_transmission_ratio
         joint_states.velocity[self.left_slide_id] *= self.slide_transmission_ratio
         joint_states.effort[self.left_slide_id] /= self.slide_transmission_ratio
 
-        self.joint_state_publisher.publish(joint_states)
-
+        joint_states.position[self.right_slide_id] *= -self.slide_transmission_ratio
+        joint_states.velocity[self.right_slide_id] *= -self.slide_transmission_ratio
+        joint_states.effort[self.right_slide_id] /= -self.slide_transmission_ratio
         
-    
+        # ======= Transform ankle from motor to joint space
+        joint_states.name[3] = "Right_Foot_Roll"
+        joint_states.name[4] = "Right_Foot_Pitch"
+        joint_states.name[8] = "Left_Foot_Roll"
+        joint_states.name[9] = "Left_Foot_Pitch"
+
+        # Perform forward kinematics to find joint position given motor position
+        zero_offset = 0.32
+        right_foot_position = ankle.ForwardKinematics.fk(
+            joint_states.position[self.right_outer_ankle_id] + zero_offset,
+            -joint_states.position[self.right_inner_ankle_id] + zero_offset)
+
+        joint_states.position[3] = right_foot_position[0]
+        joint_states.position[4] = -right_foot_position[1]
+
+        left_foot_position = ankle.ForwardKinematics.fk(
+            joint_states.position[self.left_inner_ankle_id] + zero_offset,
+            -joint_states.position[self.left_outer_ankle_id] + zero_offset)
+
+        joint_states.position[8] = left_foot_position[0]
+        joint_states.position[9] = left_foot_position[1]
+
+        # Perform forward dynamics to find joint velocity given motor velocity
+
+        # Perform forward dynamics to find joint torques given motor torques
+
+        self.joint_state_publisher.publish(joint_states)
 
     # Publish position goals
     def publish_position_goals(self, values):
