@@ -21,18 +21,18 @@ class MinimalPublisher(Node):
         self.i += 0.06
 
 
-        tilt_forward = 0.00 * cos(self.i) - 0.03
-        tilt_sideways = 0.15 * sin(self.i)
+        tilt_forward = 0.08 * cos(self.i)
+        tilt_sideways = 0.08 * sin(self.i)
         slide_height = 0.1
         msg = Float32MultiArray()
-        msg.data = [0.0 + tilt_sideways, # Right_Roll
-                    -(0.1 + tilt_forward), # Right_Pitch
+        msg.data = [0.0 + 0.0 * tilt_sideways, # Right_Roll
+                    -(0.1 + 0.0 * tilt_forward), # Right_Pitch
                     slide_height, # Right_Slide
                     0.0 + tilt_forward, # Right_Foot_Roll
                     0.0 + tilt_sideways, # Right_Foot_Pitch
 
-                    0.0 + tilt_sideways, # Left_Roll
-                    0.1 + tilt_forward, # Left_Pitch
+                    0.0 + 0.0 * tilt_sideways, # Left_Roll
+                    0.1 + 0.0 * tilt_forward, # Left_Pitch
                     slide_height, # Left_slide
                     0.0 + tilt_forward, # Left_Foot_Pitch
                     0.0 + tilt_sideways]

@@ -34,10 +34,10 @@ install(DIRECTORY scripts/ankle
 )
 
 install(PROGRAMS
-  scripts/test_pub.py
-  scripts/can_setup.sh
-  scripts/slider_joint_controller.py
-  DESTINATION lib/${PROJECT_NAME}
+  scripts/test_pub.py 
+  scripts/slider_joint_controller.py 
+  scripts/system_id.py 
+  DESTINATION lib/${PROJECT_NAME} 
 )
 
 install(TARGETS motor_controller

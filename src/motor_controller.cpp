@@ -63,7 +63,7 @@ class MotorController : public rclcpp::Node
     set_constants();
 
     // Start the control loop timer
-    control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
+    control_loop_timer = this->create_wall_timer(15ms, std::bind(&MotorController::motor_control_loop, this));
   }
 
   void disable_all()
