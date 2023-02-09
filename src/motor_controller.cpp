@@ -113,14 +113,14 @@ class MotorController : public rclcpp::Node
   // Sets the zero offset of each joint
   void set_zero_offsets()
   {
-    right_roll.set_zero_offset(0.01);
-    right_pitch.set_zero_offset(-0.056);
+    right_roll.set_zero_offset(-0.02);
+    right_pitch.set_zero_offset(-0.15);
     right_slide.set_zero_offset(-0.48);
     right_inner_ankle.set_zero_offset(0.294);
     right_outer_ankle.set_zero_offset(-0.521);
 
-    left_roll.set_zero_offset(0.0045);
-    left_pitch.set_zero_offset(0.293);
+    left_roll.set_zero_offset(-0.042);
+    left_pitch.set_zero_offset(0.338);
     left_slide.set_zero_offset(0.007);
     left_inner_ankle.set_zero_offset(0.077);
     left_outer_ankle.set_zero_offset(-0.232);
@@ -151,21 +151,27 @@ class MotorController : public rclcpp::Node
 
   void home()
   {
-    left_slide.run_to_home(1.0);
+    // left_slide.run_to_home(1.0);
+    // left_roll.run_to_home(0.5);
+    // left_pitch.run_to_home(0.5);
+
+    // right_slide.run_to_home(1.0);
+    // right_roll.run_to_home(0.5);
+    // right_pitch.run_to_home(0.5);
   }
 
   void set_constants()
   {
     // Set constants
-    left_roll.set_constants(10.0, 0.5);
+    left_roll.set_constants(30.0, 0.5);
     left_pitch.set_constants(10.0, 0.5);
-    left_slide.set_constants(1.0, 0.5);
-    left_inner_ankle.set_constants(2.0, 0.5);
+    left_slide.set_constants(20.0, 0.0);
+    left_inner_ankle.set_constants(1.0, 0.5);
     left_outer_ankle.copy_constants(&left_inner_ankle);
 
     right_roll.copy_constants(&left_roll);
     right_pitch.copy_constants(&left_pitch);
-    right_slide.copy_constants(&left_slide);
+    right_slide.set_constants(20.0, 0.0);
     right_inner_ankle.copy_constants(&left_inner_ankle);
     right_outer_ankle.copy_constants(&left_inner_ankle);
   }

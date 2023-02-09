@@ -66,8 +66,8 @@ class SliderJointController(Node):
 
         # Apply the slide transmission ratio to the position goal
         # TODO: I think this is the wrong way around
-        motor_position_goals[self.right_slide_id] *= -self.slide_transmission_ratio
-        motor_position_goals[self.left_slide_id] *= self.slide_transmission_ratio
+        motor_position_goals[self.right_slide_id] /= -self.slide_transmission_ratio
+        motor_position_goals[self.left_slide_id] /= self.slide_transmission_ratio
 
         right_ankle_goals = ankle.InverseKinematics.ik(motor_position_goals[3], motor_position_goals[4])
         left_ankle_goals = ankle.InverseKinematics.ik(motor_position_goals[8], motor_position_goals[9])
