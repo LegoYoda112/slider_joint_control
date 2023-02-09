@@ -47,30 +47,32 @@ class MinimalPublisher(Node):
             rclpy.spin_once(self)
             # time.sleep(0.001)
         
+        print(self.joint_states.position)
         
         self.move_time = 1.0 # seconds
         self.move_steps = int(100.0 * self.move_time)
 
         self.initial_position = np.array(self.joint_states.position)
 
-        for t in range(0, self.move_steps):
-            factor = 1 - t / self.move_steps
-            new_states = factor * self.initial_position
-            print(new_states)
+        # for t in range(0, self.move_steps):
+        #     factor = 1 - t / self.move_steps
+        #     print(factor)
+        #     new_states = factor * self.initial_position
+        #     # print(new_states)
 
-            roll = new_states[9]
-            pitch = new_states[8]
+        #     roll = new_states[9]
+        #     pitch = new_states[8]
 
-            new_states[8] = roll
-            new_states[9] = pitch
+        #     new_states[8] = roll
+        #     new_states[9] = pitch
 
-            self.pub_joint_states(new_states)
-            time.sleep(0.01)
+        #     self.pub_joint_states(new_states)
+        #     time.sleep(0.01)
 
 
-        print(self.joint_states.position[2])
+        # print(self.joint_states.position[2])
 
-        self.get_logger().info("Starting test")
+        self.get_logger().info("Starting the test")
 
         self.timer_period = 0.01
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -91,7 +93,7 @@ class MinimalPublisher(Node):
         self.get_logger().info("Publishing")
 
     def timer_callback(self):
-        print("loop")
+        print("loop op")
         # Increment relative timer
         self.t += self.timer_period
 
@@ -111,20 +113,24 @@ class MinimalPublisher(Node):
         msg.data = [0.0, # Right_Roll
                     0.0, # Right_Pitch
                     0.0, # Right_Slide
-                    angle, # Right_Foot_Roll
+                    0.0, # Right_Foot_Roll
                     0.0, # Right_Foot_Pitch
 
                     0.0, # Left_Roll
                     0.0, # Left_Pitch
                     0.0, # Left_slide
-                    angle, # Left_Foot_Pitch
+                    0.0, # Left_Foot_Pitch
                     0.0]
+        print(self.initial_position)
+
+
+        msg.data = list(self.initial_position)
 
         # If we have reached the end of the test, finish
-        if(self.t > self.sweep_time_s):
-            self.get_logger().info("FINISHED")
-            # Stop the timer
-            self.timer.cancel()
+        # if(self.t > self.sweep_time_s):
+        #     self.get_logger().info("FINISHED")
+        #     # Stop the timer
+        #     self.timer.cancel()
 
         self.publisher.publish(msg)
 

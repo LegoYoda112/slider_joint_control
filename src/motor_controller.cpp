@@ -165,13 +165,13 @@ class MotorController : public rclcpp::Node
 
   void home()
   {
-    // left_slide.run_to_home(1.0);
-    // left_roll.run_to_home(0.5);
-    // left_pitch.run_to_home(0.5);
+    left_slide.run_to_home(1.0);
+    left_roll.run_to_home(0.5);
+    left_pitch.run_to_home(0.5);
 
-    // right_slide.run_to_home(1.0);
-    // right_roll.run_to_home(0.5);
-    // right_pitch.run_to_home(0.5);
+    right_slide.run_to_home(1.0);
+    right_roll.run_to_home(0.5);
+    right_pitch.run_to_home(0.5);
   }
 
   void set_constants()
@@ -180,12 +180,12 @@ class MotorController : public rclcpp::Node
     left_roll.set_constants(30.0, 0.5);
     left_pitch.set_constants(10.0, 0.5);
     left_slide.set_constants(20.0, 0.0);
-    left_inner_ankle.set_constants(1.0, 0.5);
+    left_inner_ankle.set_constants(0.5, 0.2);
     left_outer_ankle.copy_constants(&left_inner_ankle);
 
     right_roll.copy_constants(&left_roll);
     right_pitch.copy_constants(&left_pitch);
-    right_slide.set_constants(20.0, 0.0);
+    right_slide.copy_constants(&right_slide);
     right_inner_ankle.copy_constants(&left_inner_ankle);
     right_outer_ankle.copy_constants(&left_inner_ankle);
   }
@@ -201,17 +201,46 @@ class MotorController : public rclcpp::Node
       return;
     }
 
+    // Print out recived values
+    std::stringstream ss;
+    ss << "Recived position targets: ";
+    std::copy(msg->data.begin(), msg->data.end(), std::ostream_iterator<float>(ss, " "));
+    ss << std::endl;
+    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+
     // Update position goals
     // this is done async so we can send them out at a constant rate, not tied to the sender
     // introduces a time delay, but improves robustness
 
+    sensor_msgs::msg::JointState right_leg_motor_states = right_leg_motors.get_joint_states();
+    sensor_msgs::msg::JointState left_leg_motor_states = left_leg_motors.get_joint_states();
+
+    position_goals[0] = right_leg_motor_states.position[0];
+    position_goals[1] = right_leg_motor_states.position[1];
+    position_goals[2] = right_leg_motor_states.position[2];
+    position_goals[3] = right_leg_motor_states.position[3];
+    position_goals[4] = right_leg_motor_states.position[4];
+
+    position_goals[5] = left_leg_motor_states.position[0];
+    position_goals[6] = left_leg_motor_states.position[1];
+    position_goals[7] = left_leg_motor_states.position[2];
+    position_goals[8] = left_leg_motor_states.position[3];
+    position_goals[9] = left_leg_motor_states.position[4];
+
     // Check the difference between the current goals and the desired goal. 
     // If the angle difference is too great, throw an error and dissable the robot
-    for(int i = 0; i < 10; i += 1){
+    for(int i = 0; i <= 9; i += 1){
+
+      // Adjust for slide
+      if(i == 2 || i == 7){
+        maximum_position_change_rads = 1.0;
+      }
+
       float target_difference = position_goals[i] - msg->data[i];
 
       if(abs(target_difference) > maximum_position_change_rads){
-        RCLCPP_ERROR(this->get_logger(), "Position change is too large");
+        RCLCPP_ERROR(this->get_logger(), "Position change is too large %f %i", target_difference, i);
+
         control_mode = error;
 
         return;
@@ -227,13 +256,6 @@ class MotorController : public rclcpp::Node
 
     // Update last message recive time
     last_msg_time = std::chrono::steady_clock::now();
-
-    // Print out recived values
-    std::stringstream ss;
-    ss << "Recived position targets: ";
-    std::copy(position_goals.begin(), position_goals.end(), std::ostream_iterator<float>(ss, " "));
-    ss << std::endl;
-    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
 
 
     // End
@@ -310,10 +332,11 @@ class MotorController : public rclcpp::Node
 
       // set constnats
       // TODO: Figure out why it only works here
-      left_roll.set_constants(200.0, 3.0);
-      left_pitch.set_constants(300.0, 2.0);
+      left_roll.set_constants(50.0, 5.0);
+      left_pitch.set_constants(50.0, 5.0);
       left_slide.set_constants(1.0, 0.5);
-      left_inner_ankle.set_constants(50.0, 2.0);
+      // left_slide.set_constants(0.0, 0.0);
+      left_inner_ankle.set_constants(10.0, 0.3);
       left_outer_ankle.copy_constants(&left_inner_ankle);
 
       right_roll.copy_constants(&left_roll);
@@ -326,12 +349,14 @@ class MotorController : public rclcpp::Node
       right_roll.send_position_goal(position_goals[0]);
       right_pitch.send_position_goal(position_goals[1]);
       right_slide.send_position_goal(position_goals[2]);
+      // right_slide.send_position_goal(0.0);
       right_inner_ankle.send_position_goal(position_goals[3]);
       right_outer_ankle.send_position_goal(position_goals[4]);
 
       left_roll.send_position_goal(position_goals[5]);
       left_pitch.send_position_goal(position_goals[6]);
       left_slide.send_position_goal(position_goals[7]);
+      // left_slide.send_position_goal(0.0);
       left_inner_ankle.send_position_goal(position_goals[8]);
       left_outer_ankle.send_position_goal(position_goals[9]);
 
@@ -435,7 +460,7 @@ class MotorController : public rclcpp::Node
 
   // TODO: Clean
   ControlMode control_mode;
-  std::vector<float> position_goals;
+  std::vector<float> position_goals{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<float> torque_goals;
   float maximum_position_change_rads = 0.3; // Maximum instant position change
 

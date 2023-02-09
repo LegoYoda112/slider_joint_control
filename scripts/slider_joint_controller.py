@@ -52,8 +52,8 @@ class SliderJointController(Node):
         self.left_slide_id = 7
 
         # Ankle motor IDs
-        self.right_inner_ankle_id = 3
-        self.right_outer_ankle_id = 4
+        self.right_inner_ankle_id = 4
+        self.right_outer_ankle_id = 3
         self.left_inner_ankle_id = 8
         self.left_outer_ankle_id = 9
 
@@ -80,7 +80,7 @@ class SliderJointController(Node):
         motor_position_goals[self.right_inner_ankle_id] = right_ankle_goals[1]
 
         motor_position_goals[self.left_inner_ankle_id] = -left_ankle_goals[0]
-        motor_position_goals[self.left_outer_ankle_id] = left_ankle_goals[1]
+        motor_position_goals[self.left_outer_ankle_id] = -left_ankle_goals[1]
 
         self.publish_position_goals(motor_position_goals)
 
