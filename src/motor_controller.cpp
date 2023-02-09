@@ -18,7 +18,7 @@
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
-enum ControlMode {position, torque, disabled};
+enum ControlMode {position, torque, disabled, error};
 
 class MotorController : public rclcpp::Node
 {
@@ -190,6 +190,21 @@ class MotorController : public rclcpp::Node
     // Update position goals
     // this is done async so we can send them out at a constant rate, not tied to the sender
     // introduces a time delay, but improves robustness
+
+    // Check the difference between the current goals and the desired goal. 
+    // If the angle difference is too great, throw an error and dissable the robot
+    for(int i = 0; i < 10; i += 1){
+      float target_difference = position_goals[i] - msg->data[i];
+
+      if(abs(target_difference) > maximum_position_change_rads){
+        RCLCPP_ERROR(this->get_logger(), "Position change is too large");
+        control_mode = error;
+
+        return;
+      }
+    }
+
+
     position_goals = msg->data;
 
     // Put robot in position control mode
@@ -253,9 +268,12 @@ class MotorController : public rclcpp::Node
     std::copy(position_goals.begin(), position_goals.end(), std::ostream_iterator<float>(ss, " "));
     RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
 
+    if(control_mode == error){
+      RCLCPP_ERROR(this->get_logger(), "Motor controller is in error state");
+    }
 
     // ==== CONTROL MODES
-    if(control_mode == disabled)
+    if(control_mode == disabled || control_mode == error)
     {
       RCLCPP_INFO_STREAM(this->get_logger(), "Sending 0 torque goals");
 
@@ -405,6 +423,7 @@ class MotorController : public rclcpp::Node
   ControlMode control_mode;
   std::vector<float> position_goals;
   std::vector<float> torque_goals;
+  float maximum_position_change_rads = 0.3; // Maximum instant position change
 
   // Watchdog variables
   std::chrono::steady_clock::time_point last_msg_time;
