@@ -59,6 +59,7 @@ class SliderJointController(Node):
 
         # Timer
         self.previous_time = self.get_clock().now()
+        self.previous_joint_states = None
 
     
     def position_goal_callback(self, msg):
@@ -99,10 +100,10 @@ class SliderJointController(Node):
     def motor_state_callback(self, msg):
         # Calculate dt
         current_time = self.get_clock().now()
-        dt = current_time - previous_time
+        dt = current_time - self.previous_time
         ns_to_s = 1 / 1e+9
         dt_sec = dt.nanoseconds * ns_to_s
-        previous_time = current_time
+        self.previous_time = current_time
 
         joint_states = msg
 
@@ -126,11 +127,6 @@ class SliderJointController(Node):
         right_foot_position = ankle.ForwardKinematics.fk(
             joint_states.position[self.right_outer_ankle_id] + zero_offset,
             -joint_states.position[self.right_inner_ankle_id] + zero_offset)
-        
-        # Set velocity
-        # TODO: Filter
-        joint_states.velocity[3] = (right_foot_position[0] - joint_states.position[3]) / dt_sec
-        joint_states.velocity[4] = (-right_foot_position[1] - joint_states.position[3]) / dt_sec
 
         # Set position
         joint_states.position[3] = right_foot_position[0]
@@ -139,15 +135,27 @@ class SliderJointController(Node):
         left_foot_position = ankle.ForwardKinematics.fk(
             joint_states.position[self.left_inner_ankle_id] + zero_offset,
             -joint_states.position[self.left_outer_ankle_id] + zero_offset)
-        
-        # Set velocity 
-        # TODO: Filter
-        joint_states.velocity[8] = (left_foot_position[0] - joint_states.position[3]) / dt_sec
-        joint_states.velocity[9] = (left_foot_position[1] - joint_states.position[3]) / dt_sec
-
 
         joint_states.position[8] = left_foot_position[0]
         joint_states.position[9] = left_foot_position[1]
+
+
+        if(self.previous_joint_states):
+
+            # Set velocity
+            # TODO: Filter
+            joint_states.velocity[3] = (right_foot_position[0] - self.previous_joint_states.position[3]) / dt_sec
+            joint_states.velocity[4] = (-right_foot_position[1] - self.previous_joint_states.position[4]) / dt_sec
+
+            # Set velocity 
+            # TODO: Filter
+            joint_states.velocity[8] = (left_foot_position[0] - self.previous_joint_states.position[8]) / dt_sec
+            joint_states.velocity[9] = (left_foot_position[1] - self.previous_joint_states.position[9]) / dt_sec
+
+            self.previous_joint_states = joint_states
+
+        else:
+            self.previous_joint_states = joint_states
 
         # Perform forward dynamics to find joint velocity given motor velocity
 

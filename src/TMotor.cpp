@@ -125,6 +125,11 @@ void TMotor::set_zero_offset(float zero_offset){
     this->zero_offset = zero_offset;
 }
 
+// Gets the zero offset for the motor
+float TMotor::get_zero_offset(){
+    return this->zero_offset;
+}
+
 // Sets the transmission ratio (used in the ROS joint state publisher)
 void TMotor::set_transmission_ratio(float transmission_ratio){
     this->transmission_ratio = transmission_ratio;

@@ -93,6 +93,8 @@ class TMotor
         // Get functions
         float get_transmission_ratio();
 
+        float get_zero_offset();
+
         // Send functions
         void send_can_msg(uint8_t*);
 

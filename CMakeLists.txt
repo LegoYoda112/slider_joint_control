@@ -37,6 +37,7 @@ install(PROGRAMS
   scripts/test_pub.py 
   scripts/slider_joint_controller.py 
   scripts/system_id.py 
+  scripts/can_setup.sh
   DESTINATION lib/${PROJECT_NAME} 
 )
 

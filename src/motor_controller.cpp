@@ -124,6 +124,20 @@ class MotorController : public rclcpp::Node
     left_slide.set_zero_offset(0.007);
     left_inner_ankle.set_zero_offset(0.077);
     left_outer_ankle.set_zero_offset(-0.232);
+
+
+    // TODO: Add into motor class
+    // Adjust zero offset if we think we've zeroed wrong
+    if(left_pitch.position < 0.05){
+      float new_zero_offset = left_pitch.get_zero_offset() - 2 * 3.1415 / 9;
+      left_pitch.set_zero_offset(new_zero_offset);
+    }
+
+    // Adjust zero offset if we think we've zeroed wrong
+    if(left_pitch.position > 0.05){
+      float new_zero_offset = left_pitch.get_zero_offset() + 2 * 3.1415 / 9;
+      left_pitch.set_zero_offset(new_zero_offset);
+    }
   }
 
 
@@ -267,12 +281,13 @@ class MotorController : public rclcpp::Node
     std::copy(position_goals.begin(), position_goals.end(), std::ostream_iterator<float>(ss, " "));
     RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
 
+    // ==== CONTROL MODES
     if(control_mode == error){
       RCLCPP_ERROR(this->get_logger(), "Motor controller is in error state");
-    }
 
-    // ==== CONTROL MODES
-    if(control_mode == disabled || control_mode == error)
+      // If error, shut down motors
+      disable_all();
+    }else if(control_mode == disabled)
     {
       RCLCPP_INFO_STREAM(this->get_logger(), "Sending 0 torque goals");
 
