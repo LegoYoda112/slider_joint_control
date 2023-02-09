@@ -57,6 +57,9 @@ class SliderJointController(Node):
         self.left_inner_ankle_id = 8
         self.left_outer_ankle_id = 9
 
+        # Timer
+        self.previous_time = self.get_clock().now()
+
     
     def position_goal_callback(self, msg):
 
@@ -94,6 +97,13 @@ class SliderJointController(Node):
 
     # When we recive a motor state message, translate it into a joint state message
     def motor_state_callback(self, msg):
+        # Calculate dt
+        current_time = self.get_clock().now()
+        dt = current_time - previous_time
+        ns_to_s = 1 / 1e+9
+        dt_sec = dt.nanoseconds * ns_to_s
+        previous_time = current_time
+
         joint_states = msg
 
         # ======= Transform slide from motor to joint space
@@ -116,13 +126,25 @@ class SliderJointController(Node):
         right_foot_position = ankle.ForwardKinematics.fk(
             joint_states.position[self.right_outer_ankle_id] + zero_offset,
             -joint_states.position[self.right_inner_ankle_id] + zero_offset)
+        
+        # Set velocity
+        # TODO: Filter
+        joint_states.velocity[3] = (right_foot_position[0] - joint_states.position[3]) / dt_sec
+        joint_states.velocity[4] = (-right_foot_position[1] - joint_states.position[3]) / dt_sec
 
+        # Set position
         joint_states.position[3] = right_foot_position[0]
         joint_states.position[4] = -right_foot_position[1]
 
         left_foot_position = ankle.ForwardKinematics.fk(
             joint_states.position[self.left_inner_ankle_id] + zero_offset,
             -joint_states.position[self.left_outer_ankle_id] + zero_offset)
+        
+        # Set velocity 
+        # TODO: Filter
+        joint_states.velocity[8] = (left_foot_position[0] - joint_states.position[3]) / dt_sec
+        joint_states.velocity[9] = (left_foot_position[1] - joint_states.position[3]) / dt_sec
+
 
         joint_states.position[8] = left_foot_position[0]
         joint_states.position[9] = left_foot_position[1]

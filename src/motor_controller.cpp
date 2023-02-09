@@ -204,7 +204,6 @@ class MotorController : public rclcpp::Node
       }
     }
 
-
     position_goals = msg->data;
 
     // Put robot in position control mode
