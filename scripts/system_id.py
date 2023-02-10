@@ -11,7 +11,6 @@ import numpy as np
 
 import time
 
-
 class MinimalPublisher(Node):
 
     def __init__(self):
@@ -77,7 +76,7 @@ class MinimalPublisher(Node):
         self.timer_period = 0.01
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
 
-
+    def increment
 
     def joint_callback(self, msg):
         self.joint_states = msg
@@ -120,7 +119,7 @@ class MinimalPublisher(Node):
                     0.0, # Left_Pitch
                     0.0, # Left_slide
                     0.0, # Left_Foot_Pitch
-                    0.0]
+                    0.0]check for user input
         print(self.initial_position)
 
 

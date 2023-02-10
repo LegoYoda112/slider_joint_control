@@ -57,7 +57,7 @@ class MotorController : public rclcpp::Node
     set_zero_offsets();
 
     // Home
-    home();
+    // home();
 
     // Set constants
     set_constants();
@@ -233,7 +233,7 @@ class MotorController : public rclcpp::Node
 
       // Adjust for slide
       if(i == 2 || i == 7){
-        maximum_position_change_rads = 1.0;
+        maximum_position_change_rads = 10.0;
       }
 
       float target_difference = position_goals[i] - msg->data[i];
@@ -332,9 +332,9 @@ class MotorController : public rclcpp::Node
 
       // set constnats
       // TODO: Figure out why it only works here
-      left_roll.set_constants(50.0, 5.0);
-      left_pitch.set_constants(50.0, 5.0);
-      left_slide.set_constants(1.0, 0.5);
+      left_roll.set_constants(100.0, 5.0);
+      left_pitch.set_constants(100.0, 5.0);
+      left_slide.set_constants(5.0, 0.5);
       // left_slide.set_constants(0.0, 0.0);
       left_inner_ankle.set_constants(10.0, 0.3);
       left_outer_ankle.copy_constants(&left_inner_ankle);

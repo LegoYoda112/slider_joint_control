@@ -38,6 +38,7 @@ install(PROGRAMS
   scripts/slider_joint_controller.py 
   scripts/system_id.py 
   scripts/can_setup.sh
+  scripts/trajectory_playback.py
   DESTINATION lib/${PROJECT_NAME} 
 )
 

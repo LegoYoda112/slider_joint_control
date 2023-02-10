@@ -96,6 +96,9 @@ class SliderJointController(Node):
 
         self.publish_torque_goals(motor_torque_goals)
 
+    def clamp(value, min_val, max_val):
+        return max(min_val, min(value, max_val))
+
     # When we recive a motor state message, translate it into a joint state message
     def motor_state_callback(self, msg):
         # Calculate dt
@@ -129,15 +132,15 @@ class SliderJointController(Node):
             -joint_states.position[self.right_inner_ankle_id] + zero_offset)
 
         # Set position
-        joint_states.position[3] = right_foot_position[0]
-        joint_states.position[4] = -right_foot_position[1]
+        joint_states.position[3] = self.clamp(right_foot_position[0], -0.2, 0.2)
+        joint_states.position[4] = self.clamp(-right_foot_position[1], -0.2, 0.2)
 
         left_foot_position = ankle.ForwardKinematics.fk(
             joint_states.position[self.left_inner_ankle_id] + zero_offset,
             -joint_states.position[self.left_outer_ankle_id] + zero_offset)
 
-        joint_states.position[8] = left_foot_position[0]
-        joint_states.position[9] = left_foot_position[1]
+        joint_states.position[8] = self.clamp(left_foot_position[0], -0.2, 0.2)
+        joint_states.position[9] = self.clamp(left_foot_position[1], -0.2, 0.2)
 
 
         if(self.previous_joint_states):
