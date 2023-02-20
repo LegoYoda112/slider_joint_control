@@ -24,5 +24,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        motor_controller_node
+        motor_controller_node,
+        joint_controller_node
     ])
