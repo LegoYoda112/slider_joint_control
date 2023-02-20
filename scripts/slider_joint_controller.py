@@ -52,8 +52,8 @@ class SliderJointController(Node):
         self.left_slide_id = 7
 
         # Ankle motor IDs
-        self.right_inner_ankle_id = 4
-        self.right_outer_ankle_id = 3
+        self.right_inner_ankle_id = 3
+        self.right_outer_ankle_id = 4
         self.left_inner_ankle_id = 8
         self.left_outer_ankle_id = 9
 
@@ -70,17 +70,19 @@ class SliderJointController(Node):
 
         # Apply the slide transmission ratio to the position goal
         # TODO: I think this is the wrong way around
-        motor_position_goals[self.right_slide_id] /= -self.slide_transmission_ratio
-        motor_position_goals[self.left_slide_id] /= self.slide_transmission_ratio
+        motor_position_goals[self.right_slide_id] = motor_position_goals[self.right_slide_id] / -self.slide_transmission_ratio
+        motor_position_goals[self.left_slide_id] = motor_position_goals[self.left_slide_id] / self.slide_transmission_ratio
 
-        right_ankle_goals = ankle.InverseKinematics.ik(motor_position_goals[3], motor_position_goals[4])
-        left_ankle_goals = ankle.InverseKinematics.ik(motor_position_goals[8], motor_position_goals[9])
+        right_ankle_goals = ankle.InverseKinematics.ik(self.clamp(motor_position_goals[3], -0.2, 0.2), 
+                                                       self.clamp(motor_position_goals[4], -0.2, 0.2))
+        left_ankle_goals = ankle.InverseKinematics.ik(self.clamp(motor_position_goals[8], -0.2, 0.2), 
+                                                      self.clamp(motor_position_goals[9], -0.2, 0.2))
         
-        motor_position_goals[self.right_outer_ankle_id] = -right_ankle_goals[0]
-        motor_position_goals[self.right_inner_ankle_id] = right_ankle_goals[1]
+        motor_position_goals[self.right_outer_ankle_id] = right_ankle_goals[1]
+        motor_position_goals[self.right_inner_ankle_id] = right_ankle_goals[0]
 
-        motor_position_goals[self.left_inner_ankle_id] = -left_ankle_goals[0]
-        motor_position_goals[self.left_outer_ankle_id] = -left_ankle_goals[1]
+        motor_position_goals[self.left_inner_ankle_id] = left_ankle_goals[0]
+        motor_position_goals[self.left_outer_ankle_id] = left_ankle_goals[1]
 
         self.publish_position_goals(motor_position_goals)
 
@@ -96,7 +98,8 @@ class SliderJointController(Node):
 
         self.publish_torque_goals(motor_torque_goals)
 
-    def clamp(value, min_val, max_val):
+    # Clamps a value
+    def clamp(self, value, min_val, max_val):
         return max(min_val, min(value, max_val))
 
     # When we recive a motor state message, translate it into a joint state message
@@ -132,15 +135,15 @@ class SliderJointController(Node):
             -joint_states.position[self.right_inner_ankle_id] + zero_offset)
 
         # Set position
-        joint_states.position[3] = self.clamp(right_foot_position[0], -0.2, 0.2)
-        joint_states.position[4] = self.clamp(-right_foot_position[1], -0.2, 0.2)
+        joint_states.position[3] = right_foot_position[0]
+        joint_states.position[4] = -right_foot_position[1]
 
         left_foot_position = ankle.ForwardKinematics.fk(
             joint_states.position[self.left_inner_ankle_id] + zero_offset,
             -joint_states.position[self.left_outer_ankle_id] + zero_offset)
 
-        joint_states.position[8] = self.clamp(left_foot_position[0], -0.2, 0.2)
-        joint_states.position[9] = self.clamp(left_foot_position[1], -0.2, 0.2)
+        joint_states.position[8] = left_foot_position[0]
+        joint_states.position[9] = left_foot_position[1]
 
 
         if(self.previous_joint_states):
