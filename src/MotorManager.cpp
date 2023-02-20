@@ -65,6 +65,30 @@ void MotorManager::disable_all(){
     }
 }
 
+// Read one motor and set state
+void MotorManager::read_one(){
+
+    // Read in one CAN frame
+    int nbytes;
+    struct can_frame frame;
+    nbytes = read(bus.get_socket_num(), &frame, sizeof(struct can_frame));
+    if (nbytes < 0) {
+        perror("Read");
+    }
+
+    // Grab the frame ID
+    int id = frame.data[0];
+
+    // Loop through all motors and set correct based on CAN ID
+    for (auto it = this->motors.begin(); it != this->motors.end(); it++){
+        auto motor = *it;
+
+        if(id == motor->can_id){
+            motor->read_motor_response_from_frame(frame);
+        }
+    }
+}
+
 // Read the state of all the motors
 void MotorManager::read_all(){
 
@@ -73,25 +97,7 @@ void MotorManager::read_all(){
 
     // Loop through all motors
     for(int i = 0; i < num_motors; i++){
-
-        int nbytes;
-        struct can_frame frame;
-        nbytes = read(bus.get_socket_num(), &frame, sizeof(struct can_frame));
-        if (nbytes < 0) {
-            perror("Read");
-        }
-
-        // Grab the CAN frame ID
-        int id = frame.data[0];
-
-        // Loop through all motors and set correct based on CAN ID
-        for (auto it = this->motors.begin(); it != this->motors.end(); it++){
-            auto motor = *it;
-
-            if(id == motor->can_id){
-                motor->read_motor_response_from_frame(frame);
-            }
-        }
+        this->read_one();
     }
 }
 

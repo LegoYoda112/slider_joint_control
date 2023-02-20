@@ -379,7 +379,7 @@ class MotorController : public rclcpp::Node
     // Print out time delta
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_msg_time).count();
 
-    //TODO: put this on verbose arg
+    // TODO: put this on verbose arg
     RCLCPP_INFO(this->get_logger(), "Watchdog %li", time_delta);
 
     // Check if we have violated our watchdog timer and disable motors

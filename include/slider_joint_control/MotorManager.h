@@ -34,6 +34,8 @@ class MotorManager
 
         void home_all();
 
+        void read_one();
+
         void read_all();
 
         void home_all_individual(float);
