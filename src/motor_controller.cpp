@@ -66,6 +66,21 @@ class MotorController : public rclcpp::Node
     control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
   }
 
+
+  // Start motor state read threads
+  void start_read_threads()
+  {
+    left_leg_motors.start_read_thread();
+    right_leg_motors.start_read_thread();
+  }
+
+  // Wait until motor state read threads are finished
+  void join_read_threads()
+  {
+    left_leg_motors.join_read_thread();
+    right_leg_motors.join_read_thread();
+  }
+
   void disable_all()
   {
     right_leg_motors.disable_all();
@@ -144,10 +159,10 @@ class MotorController : public rclcpp::Node
   void connect()
   {
     // Do the homing thing
-    RCLCPP_INFO(this->get_logger(), "Connecting to right motors");
+    RCLCPP_DEBUG(this->get_logger(), "Connecting to right motors");
     right_leg_motors.connect();
 
-    RCLCPP_INFO(this->get_logger(), "Connecting to left motors");
+    RCLCPP_DEBUG(this->get_logger(), "Connecting to left motors");
     left_leg_motors.connect();
   }
 
@@ -206,7 +221,7 @@ class MotorController : public rclcpp::Node
     ss << "Recived position targets: ";
     std::copy(msg->data.begin(), msg->data.end(), std::ostream_iterator<float>(ss, " "));
     ss << std::endl;
-    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+    RCLCPP_DEBUG_STREAM(this->get_logger(), ss.str());
 
     // Update position goals
     // this is done async so we can send them out at a constant rate, not tied to the sender
@@ -311,7 +326,7 @@ class MotorController : public rclcpp::Node
       disable_all();
     }else if(control_mode == disabled)
     {
-      RCLCPP_INFO_STREAM(this->get_logger(), "Sending 0 torque goals");
+      RCLCPP_DEBUG_STREAM(this->get_logger(), "Sending 0 torque goals");
 
       // Soft disable
       right_roll.send_torque_goal(0.0);
@@ -365,12 +380,11 @@ class MotorController : public rclcpp::Node
       // Send torque goals
     }
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Updating motor states");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Updating motor states");
     // Publish motor states
-    update_and_publish_motor_states();
+    publish_motor_states();
 
-
-    RCLCPP_INFO_STREAM(this->get_logger(), "Checking watchdog");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Checking watchdog");
 
     // ===== WATCHDOG
 
@@ -379,8 +393,8 @@ class MotorController : public rclcpp::Node
     // Print out time delta
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_msg_time).count();
 
-    //TODO: put this on verbose arg
-    RCLCPP_INFO(this->get_logger(), "Watchdog %li", time_delta);
+    // TODO: put this on verbose arg
+    RCLCPP_DEBUG(this->get_logger(), "Watchdog %li", time_delta);
 
     // Check if we have violated our watchdog timer and disable motors
     if(time_delta > control_timout_ms)
@@ -392,22 +406,23 @@ class MotorController : public rclcpp::Node
     }
   }
 
-  void update_and_publish_motor_states()
+  void publish_motor_states()
   {
-
-    RCLCPP_INFO_STREAM(this->get_logger(), "Reading motors");
-    
-    // Update 
-    right_leg_motors.read_all();
-    left_leg_motors.read_all();
-
-    RCLCPP_INFO_STREAM(this->get_logger(), "Making joint state objects");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Making joint state objects");
 
     // Get joint states
+    // Uses locks to prevent reading and writing from the motor states simultaniously
+    // when the read is occuring in another thread
+    right_leg_motors.aquire_motor_state_lock();
     sensor_msgs::msg::JointState leg_motor_states = right_leg_motors.get_joint_states();
-    sensor_msgs::msg::JointState left_leg_joint_states = left_leg_motors.get_joint_states();
+    right_leg_motors.release_motor_state_lock();
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Concatining joint states");
+    left_leg_motors.aquire_motor_state_lock();
+    sensor_msgs::msg::JointState left_leg_joint_states = left_leg_motors.get_joint_states();
+    left_leg_motors.release_motor_state_lock();
+
+
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Concatining joint states");
 
     // Concatinate joint efforts
     leg_motor_states.effort.insert(
@@ -437,10 +452,10 @@ class MotorController : public rclcpp::Node
         std::make_move_iterator(left_leg_joint_states.name.end())
     );
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Setting header");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Setting header");
     leg_motor_states.header.stamp = get_clock()->now();
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Publishing");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Publishing");
     leg_motor_state_publisher_->publish(leg_motor_states);
 
   }
@@ -484,6 +499,8 @@ class MotorController : public rclcpp::Node
   // Set up managers
   MotorManager right_leg_motors = MotorManager("can0");
   MotorManager left_leg_motors = MotorManager("can1");
+
+  // Set up threads
 };
 
 
@@ -494,10 +511,13 @@ int main(int argc, char * argv[])
 
   // Make node and spin
   auto motor_controller = std::make_shared<MotorController>();
+  motor_controller.get()->start_read_threads();
+
   rclcpp::spin(motor_controller);
 
   // Disable motors and shut down
   motor_controller.get()->disable_all();
+  motor_controller.get()->join_read_threads();
   rclcpp::shutdown();
 
   return 0;
