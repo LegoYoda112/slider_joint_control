@@ -159,10 +159,10 @@ class MotorController : public rclcpp::Node
   void connect()
   {
     // Do the homing thing
-    RCLCPP_INFO(this->get_logger(), "Connecting to right motors");
+    RCLCPP_DEBUG(this->get_logger(), "Connecting to right motors");
     right_leg_motors.connect();
 
-    RCLCPP_INFO(this->get_logger(), "Connecting to left motors");
+    RCLCPP_DEBUG(this->get_logger(), "Connecting to left motors");
     left_leg_motors.connect();
   }
 
@@ -221,7 +221,7 @@ class MotorController : public rclcpp::Node
     ss << "Recived position targets: ";
     std::copy(msg->data.begin(), msg->data.end(), std::ostream_iterator<float>(ss, " "));
     ss << std::endl;
-    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+    RCLCPP_DEBUG_STREAM(this->get_logger(), ss.str());
 
     // Update position goals
     // this is done async so we can send them out at a constant rate, not tied to the sender
@@ -326,7 +326,7 @@ class MotorController : public rclcpp::Node
       disable_all();
     }else if(control_mode == disabled)
     {
-      RCLCPP_INFO_STREAM(this->get_logger(), "Sending 0 torque goals");
+      RCLCPP_DEBUG_STREAM(this->get_logger(), "Sending 0 torque goals");
 
       // Soft disable
       right_roll.send_torque_goal(0.0);
@@ -380,11 +380,11 @@ class MotorController : public rclcpp::Node
       // Send torque goals
     }
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Updating motor states");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Updating motor states");
     // Publish motor states
     publish_motor_states();
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Checking watchdog");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Checking watchdog");
 
     // ===== WATCHDOG
 
@@ -394,7 +394,7 @@ class MotorController : public rclcpp::Node
     auto time_delta = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - last_msg_time).count();
 
     // TODO: put this on verbose arg
-    RCLCPP_INFO(this->get_logger(), "Watchdog %li", time_delta);
+    RCLCPP_DEBUG(this->get_logger(), "Watchdog %li", time_delta);
 
     // Check if we have violated our watchdog timer and disable motors
     if(time_delta > control_timout_ms)
@@ -408,7 +408,7 @@ class MotorController : public rclcpp::Node
 
   void publish_motor_states()
   {
-    RCLCPP_INFO_STREAM(this->get_logger(), "Making joint state objects");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Making joint state objects");
 
     // Get joint states
     // Uses locks to prevent reading and writing from the motor states simultaniously
@@ -422,7 +422,7 @@ class MotorController : public rclcpp::Node
     left_leg_motors.release_motor_state_lock();
 
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Concatining joint states");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Concatining joint states");
 
     // Concatinate joint efforts
     leg_motor_states.effort.insert(
@@ -452,10 +452,10 @@ class MotorController : public rclcpp::Node
         std::make_move_iterator(left_leg_joint_states.name.end())
     );
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Setting header");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Setting header");
     leg_motor_states.header.stamp = get_clock()->now();
 
-    RCLCPP_INFO_STREAM(this->get_logger(), "Publishing");
+    RCLCPP_DEBUG_STREAM(this->get_logger(), "Publishing");
     leg_motor_state_publisher_->publish(leg_motor_states);
 
   }
