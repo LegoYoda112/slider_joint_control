@@ -13,6 +13,11 @@ import time
 from readchar import readkey, key
 import signal
 
+import csv
+
+import os
+print(os.getcwd())
+
 def handler(signum, frame):
     raise Exception()
 
@@ -23,6 +28,8 @@ class MinimalPublisher(Node):
     def __init__(self):
         super().__init__('trajectory_playback')
         self.publisher = self.create_publisher(Float32MultiArray, '/slider/control/joint/position_goals', 10)
+
+        self.trajectory = np.loadtxt('test.csv', delimiter=',', dtype=float)
         
         self.joint_subscriber = self.create_subscription(
             JointState,
@@ -33,7 +40,7 @@ class MinimalPublisher(Node):
 
         self.t = 0
         self.index = 0
-        self.trajectory_end = 500
+        self.trajectory_end = len(self.trajectory)
 
         self.joint_states = None
 
@@ -71,14 +78,54 @@ class MinimalPublisher(Node):
 
         self.get_logger().info("Starting the test")
 
-        self.timer_period = 0.1
+        self.timer_period = 0.05
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
     
     def get_pos_from_index(self):
-        pos = np.zeros(10)
-        pos[3] = np.sin(self.index / 10) * 0.2
+        new_pos = np.zeros(10)
+        # print(self.trajectory[self.index])
 
-        return pos
+        pos = self.trajectory[self.index]
+        
+
+        new_pos[3] = -pos[3]
+        new_pos[4] = pos[4]
+
+        new_pos[0] = -pos[0] + 0.05
+        new_pos[1] = pos[1]
+
+        new_pos[2] = pos[2]
+        new_pos[7] = pos[7]
+
+        new_pos[5] = -pos[5] - 0.05
+        new_pos[6] = pos[6]
+
+        new_pos[8] = -pos[8]
+        new_pos[9] = pos[9]
+
+        # pos[0] = action[0] * 0.3
+        # pos[1] = action[1] * 0.8
+
+        # pos[3] = action[3] * 0.5
+        # pos[4] = action[4] * 0.5
+
+        # pos[2] = action[2] * 0.05
+
+
+
+
+        # pos[5] = action[5] * 0.3
+        # pos[6] = action[6] * 0.8
+
+        # pos[7] = action[7] * 0.05
+        
+        # pos[8] = action[8] * 0.5
+        # pos[9] = action[9] * 0.5
+
+
+
+
+        return new_pos
 
     def joint_callback(self, msg):
         self.joint_states = msg
@@ -96,9 +143,9 @@ class MinimalPublisher(Node):
 
         char = " "
         try:
-            signal.setitimer(signal.ITIMER_REAL, 0.1)
+            signal.setitimer(signal.ITIMER_REAL, 0.05)
             char = readkey()
-            time.sleep(0.1)
+            time.sleep(0.05)
         except KeyboardInterrupt:
             raise KeyboardInterrupt
         except Exception as err:
@@ -110,7 +157,6 @@ class MinimalPublisher(Node):
             self.index -= 1
         elif(char == ']' and self.index < self.trajectory_end):
             self.index += 1
-        print(self.index)
         print(self.get_pos_from_index())
 
         self.pub_joint_states(self.get_pos_from_index())

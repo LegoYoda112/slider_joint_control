@@ -63,7 +63,7 @@ class MotorController : public rclcpp::Node
     set_constants();
 
     // Start the control loop timer
-    control_loop_timer = this->create_wall_timer(15ms, std::bind(&MotorController::motor_control_loop, this));
+    control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
   }
 
   void disable_all()
@@ -127,17 +127,17 @@ class MotorController : public rclcpp::Node
 
 
     // TODO: Add into motor class
-    // Adjust zero offset if we think we've zeroed wrong
-    if(left_pitch.position < 0.05){
-      float new_zero_offset = left_pitch.get_zero_offset() - 2 * 3.1415 / 9;
-      left_pitch.set_zero_offset(new_zero_offset);
-    }
+    // // Adjust zero offset if we think we've zeroed wrong
+    // if(left_pitch.position < 0.05){
+    //   float new_zero_offset = left_pitch.get_zero_offset() - 2 * 3.1415 / 9;
+    //   left_pitch.set_zero_offset(new_zero_offset);
+    // }
 
-    // Adjust zero offset if we think we've zeroed wrong
-    if(left_pitch.position > 0.05){
-      float new_zero_offset = left_pitch.get_zero_offset() + 2 * 3.1415 / 9;
-      left_pitch.set_zero_offset(new_zero_offset);
-    }
+    // // Adjust zero offset if we think we've zeroed wrong
+    // if(left_pitch.position > 0.05){
+    //   float new_zero_offset = left_pitch.get_zero_offset() + 2 * 3.1415 / 9;
+    //   left_pitch.set_zero_offset(new_zero_offset);
+    // }
   }
 
 
@@ -180,7 +180,7 @@ class MotorController : public rclcpp::Node
     left_roll.set_constants(30.0, 0.5);
     left_pitch.set_constants(10.0, 0.5);
     left_slide.set_constants(20.0, 0.0);
-    left_inner_ankle.set_constants(0.5, 0.2);
+    left_inner_ankle.set_constants(0.2, 0.1);
     left_outer_ankle.copy_constants(&left_inner_ankle);
 
     right_roll.copy_constants(&left_roll);
@@ -332,11 +332,11 @@ class MotorController : public rclcpp::Node
 
       // set constnats
       // TODO: Figure out why it only works here
-      left_roll.set_constants(100.0, 5.0);
-      left_pitch.set_constants(100.0, 5.0);
-      left_slide.set_constants(5.0, 0.5);
+      left_roll.set_constants(150.0, 2.0);
+      left_pitch.set_constants(100.0, 2.0);
+      left_slide.set_constants(20.0, 0.0);
       // left_slide.set_constants(0.0, 0.0);
-      left_inner_ankle.set_constants(10.0, 0.3);
+      left_inner_ankle.set_constants(10.0, 1.0);
       left_outer_ankle.copy_constants(&left_inner_ankle);
 
       right_roll.copy_constants(&left_roll);
