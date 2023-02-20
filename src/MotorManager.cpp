@@ -79,17 +79,26 @@ void MotorManager::read_one(){
     // Grab the frame ID
     int id = frame.data[0];
 
+    // cout << "read motor" << id << endl;
+
     // Loop through all motors and set correct based on CAN ID
     for (auto it = this->motors.begin(); it != this->motors.end(); it++){
         auto motor = *it;
 
         if(id == motor->can_id){
+            // Aquare and release the motor state lock to make sure we
+            // don't read and write simultaniously if another thread
+            // is attempting to read out motor states
+
+            this->aquire_motor_state_lock();
             motor->read_motor_response_from_frame(frame);
+            this->release_motor_state_lock();
         }
     }
 }
 
 // Read the state of all the motors
+// Not really recomended as it will hang if a motor doesn't reply correctly
 void MotorManager::read_all(){
 
     // Get number of motors
@@ -99,6 +108,39 @@ void MotorManager::read_all(){
     for(int i = 0; i < num_motors; i++){
         this->read_one();
     }
+}
+
+// Injest CAN frames as soon as they arrive
+void MotorManager::read_loop(){
+
+    // Read motor messages as soon as they arrive
+    while(rclcpp::ok()){
+        this->read_one();
+    }
+}
+
+// Starts running the motor read loop in a thread
+void MotorManager::start_read_thread(){
+    this->read_thread = thread(&MotorManager::read_loop, this);
+}
+
+// Waits until the read thread has stopped
+void MotorManager::join_read_thread(){
+    cout << "Waiting for thread to stop" << endl;
+
+    // std::terminate();
+
+    this->read_thread.join();
+}
+
+// Wait until motor state read lock has been aquired
+void MotorManager::aquire_motor_state_lock(){
+    this->motor_state_lock.lock();
+}
+
+// Release motor state read lock
+void MotorManager::release_motor_state_lock(){
+    this->motor_state_lock.unlock();
 }
 
 // Homes each motor one by one

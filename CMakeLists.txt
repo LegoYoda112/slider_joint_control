@@ -19,21 +19,21 @@ install(DIRECTORY launch urdf rviz meshes
     DESTINATION share/${PROJECT_NAME}
 )
 
-# add_executable(motor_controller src/motor_controller.cpp src/MotorManager.cpp src/TMotor.cpp src/canbus.cpp)
-add_executable(test_node src/test_node.cpp)
+add_executable(motor_controller src/motor_controller.cpp src/MotorManager.cpp src/TMotor.cpp src/canbus.cpp)
+# add_executable(test_node src/test_node.cpp)
 
 
-# target_include_directories(motor_controller PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
-# target_compile_features(motor_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-# ament_target_dependencies(motor_controller rclcpp std_msgs sensor_msgs)
-
-target_include_directories(test_node PUBLIC
+target_include_directories(motor_controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(test_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(test_node rclcpp std_msgs)
+target_compile_features(motor_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(motor_controller rclcpp std_msgs sensor_msgs)
+
+# target_include_directories(test_node PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
+# target_compile_features(test_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+# ament_target_dependencies(test_node rclcpp std_msgs)
 
 
 # ament_python_install_package(${PROJECT_NAME})
@@ -51,10 +51,10 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME} 
 )
 
-# install(TARGETS motor_controller
-#   DESTINATION lib/${PROJECT_NAME})
-
-  install(TARGETS test_node
+install(TARGETS motor_controller
   DESTINATION lib/${PROJECT_NAME})
+
+  # install(TARGETS test_node
+  # DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

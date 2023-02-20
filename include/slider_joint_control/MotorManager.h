@@ -2,10 +2,13 @@
 
 #include "canbus.h"
 
+#include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 
 #include <string.h>
 #include <vector>
+#include <thread>
+#include <mutex> 
 
 #ifndef MOTORMANAGER_H
 #define MOTORMANAGER_H
@@ -16,6 +19,7 @@ class MotorManager
         int socket_num;
         canbus bus;
         vector<TMotor*> motors;
+        thread read_thread;
     
     public:
         MotorManager(std::string name){
@@ -38,6 +42,16 @@ class MotorManager
 
         void read_all();
 
+        void read_loop();
+
+        void start_read_thread();
+
+        void join_read_thread();
+
+        void aquire_motor_state_lock();
+
+        void release_motor_state_lock();
+
         void home_all_individual(float);
 
         void send_all_zero();
@@ -47,6 +61,8 @@ class MotorManager
         void soft_stop_dampen();
 
         sensor_msgs::msg::JointState get_joint_states();
+
+        std::mutex motor_state_lock;
 };
 
 #endif

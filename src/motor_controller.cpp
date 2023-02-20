@@ -63,7 +63,22 @@ class MotorController : public rclcpp::Node
     set_constants();
 
     // Start the control loop timer
-    control_loop_timer = this->create_wall_timer(15ms, std::bind(&MotorController::motor_control_loop, this));
+    control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
+  }
+
+
+  // Start motor state read threads
+  void start_read_threads()
+  {
+    left_leg_motors.start_read_thread();
+    right_leg_motors.start_read_thread();
+  }
+
+  // Wait until motor state read threads are finished
+  void join_read_threads()
+  {
+    left_leg_motors.join_read_thread();
+    right_leg_motors.join_read_thread();
   }
 
   void disable_all()
@@ -367,8 +382,7 @@ class MotorController : public rclcpp::Node
 
     RCLCPP_INFO_STREAM(this->get_logger(), "Updating motor states");
     // Publish motor states
-    update_and_publish_motor_states();
-
+    publish_motor_states();
 
     RCLCPP_INFO_STREAM(this->get_logger(), "Checking watchdog");
 
@@ -392,20 +406,21 @@ class MotorController : public rclcpp::Node
     }
   }
 
-  void update_and_publish_motor_states()
+  void publish_motor_states()
   {
-
-    RCLCPP_INFO_STREAM(this->get_logger(), "Reading motors");
-    
-    // Update 
-    right_leg_motors.read_all();
-    left_leg_motors.read_all();
-
     RCLCPP_INFO_STREAM(this->get_logger(), "Making joint state objects");
 
     // Get joint states
+    // Uses locks to prevent reading and writing from the motor states simultaniously
+    // when the read is occuring in another thread
+    right_leg_motors.aquire_motor_state_lock();
     sensor_msgs::msg::JointState leg_motor_states = right_leg_motors.get_joint_states();
+    right_leg_motors.release_motor_state_lock();
+
+    left_leg_motors.aquire_motor_state_lock();
     sensor_msgs::msg::JointState left_leg_joint_states = left_leg_motors.get_joint_states();
+    left_leg_motors.release_motor_state_lock();
+
 
     RCLCPP_INFO_STREAM(this->get_logger(), "Concatining joint states");
 
@@ -484,6 +499,8 @@ class MotorController : public rclcpp::Node
   // Set up managers
   MotorManager right_leg_motors = MotorManager("can0");
   MotorManager left_leg_motors = MotorManager("can1");
+
+  // Set up threads
 };
 
 
@@ -494,10 +511,13 @@ int main(int argc, char * argv[])
 
   // Make node and spin
   auto motor_controller = std::make_shared<MotorController>();
+  motor_controller.get()->start_read_threads();
+
   rclcpp::spin(motor_controller);
 
   // Disable motors and shut down
   motor_controller.get()->disable_all();
+  motor_controller.get()->join_read_threads();
   rclcpp::shutdown();
 
   return 0;
