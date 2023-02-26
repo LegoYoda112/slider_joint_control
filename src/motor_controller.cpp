@@ -14,7 +14,6 @@
 #include "slider_joint_control/TMotorAK60_6.h"
 #include "slider_joint_control/TMotorAK10_9.h"
 
-
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
@@ -50,6 +49,7 @@ class MotorController : public rclcpp::Node
     setup_motors();
 
     // Connect to the robot and enable motors
+    // Enable also calls read_all
     connect();
     enable();
 
@@ -65,7 +65,6 @@ class MotorController : public rclcpp::Node
     // Start the control loop timer
     control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
   }
-
 
   // Start motor state read threads
   void start_read_threads()
@@ -104,7 +103,6 @@ class MotorController : public rclcpp::Node
     right_leg_motors.add_motor(&right_inner_ankle);
     right_leg_motors.add_motor(&right_outer_ankle);
 
-
     // Print out motor names
     right_leg_motors.print_all_motors();
     left_leg_motors.print_all_motors();
@@ -140,7 +138,6 @@ class MotorController : public rclcpp::Node
     left_inner_ankle.set_zero_offset(0.077);
     left_outer_ankle.set_zero_offset(-0.232);
 
-
     // TODO: Add into motor class
     // // Adjust zero offset if we think we've zeroed wrong
     // if(left_pitch.position < 0.05){
@@ -158,7 +155,7 @@ class MotorController : public rclcpp::Node
 
   void connect()
   {
-    // Do the homing thing
+    // Connect both can buses
     RCLCPP_DEBUG(this->get_logger(), "Connecting to right motors");
     right_leg_motors.connect();
 
@@ -168,14 +165,16 @@ class MotorController : public rclcpp::Node
 
   void enable()
   {
-    // Enable
+    // Send enable commands to each motor and read responses
+    // TODO: Hangs if motors don't respond, might be best to add some sort of timeout here
+    // and throw an exception
     RCLCPP_INFO(this->get_logger(), "Enabling right motors");
     right_leg_motors.enable_all();
+    right_leg_motors.read_all();
 
     RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
     left_leg_motors.enable_all();
-
-
+    left_leg_motors.read_all();
   }
 
   void home()
@@ -189,20 +188,20 @@ class MotorController : public rclcpp::Node
     right_pitch.run_to_home(0.5);
   }
 
-  void set_constants()
+  void set_position_constants()
   {
     // Set constants
-    left_roll.set_constants(30.0, 0.5);
-    left_pitch.set_constants(10.0, 0.5);
-    left_slide.set_constants(20.0, 0.0);
-    left_inner_ankle.set_constants(0.2, 0.1);
-    left_outer_ankle.copy_constants(&left_inner_ankle);
+      left_roll.set_constants(150.0, 2.0);
+      left_pitch.set_constants(100.0, 2.0);
+      left_slide.set_constants(20.0, 0.0);
+      left_inner_ankle.set_constants(10.0, 1.0);
+      left_outer_ankle.copy_constants(&left_inner_ankle);
 
-    right_roll.copy_constants(&left_roll);
-    right_pitch.copy_constants(&left_pitch);
-    right_slide.copy_constants(&right_slide);
-    right_inner_ankle.copy_constants(&left_inner_ankle);
-    right_outer_ankle.copy_constants(&left_inner_ankle);
+      right_roll.copy_constants(&left_roll);
+      right_pitch.copy_constants(&left_pitch);
+      right_slide.copy_constants(&left_slide);
+      right_inner_ankle.copy_constants(&left_inner_ankle);
+      right_outer_ankle.copy_constants(&left_inner_ankle);
   }
 
   // Position control callback
@@ -345,20 +344,9 @@ class MotorController : public rclcpp::Node
     { 
       RCLCPP_INFO_STREAM(this->get_logger(), "Sending position goals");
 
-      // set constnats
-      // TODO: Figure out why it only works here
-      left_roll.set_constants(150.0, 2.0);
-      left_pitch.set_constants(100.0, 2.0);
-      left_slide.set_constants(20.0, 0.0);
-      // left_slide.set_constants(0.0, 0.0);
-      left_inner_ankle.set_constants(10.0, 1.0);
-      left_outer_ankle.copy_constants(&left_inner_ankle);
-
-      right_roll.copy_constants(&left_roll);
-      right_pitch.copy_constants(&left_pitch);
-      right_slide.copy_constants(&left_slide);
-      right_inner_ankle.copy_constants(&left_inner_ankle);
-      right_outer_ankle.copy_constants(&left_inner_ankle);
+      // Set position control constants
+      // NOTE: Might be a bug
+      set_constants();
 
       // Send position goals
       right_roll.send_position_goal(position_goals[0]);

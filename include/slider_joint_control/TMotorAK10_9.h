@@ -19,6 +19,8 @@ class TMotorAK10_9 : public TMotor
         const float KD_MIN = 0;
         const float KD_MAX = 5;
 
+        const int INTERNAL_GEAR_RATIO = 9;
+
     public:
         TMotorAK10_9(string joint_name, int can_id){
             

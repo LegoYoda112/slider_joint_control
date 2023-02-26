@@ -34,6 +34,7 @@ class TMotor
         const float KP_MAX = 500;
         const float KD_MIN = 0;
         const float KD_MAX = 5;
+        const int INTERNAL_GEAR_RATIO = 1;
 
         // Control constants
         float p_des = 0.0;
@@ -57,9 +58,9 @@ class TMotor
         uint8_t can_id = 0;
         int socket = 0;
 
-        float position;
-        float velocity;
-        float torque;
+        float position = NAN;
+        float velocity = NAN;
+        float torque = NAN;
 
         // Default constructor
         TMotor(){

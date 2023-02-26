@@ -99,6 +99,7 @@ void MotorManager::read_one(){
 
 // Read the state of all the motors
 // Not really recomended as it will hang if a motor doesn't reply correctly
+// Perhaps this is useful at the begining?
 void MotorManager::read_all(){
 
     // Get number of motors
