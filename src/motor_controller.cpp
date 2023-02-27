@@ -346,7 +346,7 @@ class MotorController : public rclcpp::Node
 
       // Set position control constants
       // NOTE: Might be a bug
-      set_constants();
+      set_position_constants();
 
       // Send position goals
       right_roll.send_position_goal(position_goals[0]);
