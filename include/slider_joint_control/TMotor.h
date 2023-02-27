@@ -24,17 +24,17 @@ class TMotor
 {
     protected:
         // Motor constants
-        const float P_MIN = -12.5;
-        const float P_MAX = 12.5;
-        const float V_MIN = -41.87;
-        const float V_MAX = 41.87;
-        const float T_MIN = -9;
-        const float T_MAX = 9;
-        const float KP_MIN = 0;
-        const float KP_MAX = 500;
-        const float KD_MIN = 0;
-        const float KD_MAX = 5;
-        const int INTERNAL_GEAR_RATIO = 1;
+        float P_MIN = -12.5;
+        float P_MAX = 12.5;
+        float V_MIN = -41.87;
+        float V_MAX = 41.87;
+        float T_MIN = -9;
+        float T_MAX = 9;
+        float KP_MIN = 0;
+        float KP_MAX = 500;
+        float KD_MIN = 0;
+        float KD_MAX = 5;
+        int INTERNAL_GEAR_RATIO = 1;
 
         // Control constants
         float p_des = 0.0;

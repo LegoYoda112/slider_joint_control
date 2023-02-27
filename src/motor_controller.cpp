@@ -60,7 +60,7 @@ class MotorController : public rclcpp::Node
     // home();
 
     // Set constants
-    set_constants();
+    // set_constants();
 
     // Start the control loop timer
     control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
@@ -168,12 +168,16 @@ class MotorController : public rclcpp::Node
     // Send enable commands to each motor and read responses
     // TODO: Hangs if motors don't respond, might be best to add some sort of timeout here
     // and throw an exception
+
+    // I think that's actually a good feature?
     RCLCPP_INFO(this->get_logger(), "Enabling right motors");
     right_leg_motors.enable_all();
+    right_leg_motors.send_all_zero();
     right_leg_motors.read_all();
 
     RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
     left_leg_motors.enable_all();
+    left_leg_motors.send_all_zero();
     left_leg_motors.read_all();
   }
 
@@ -315,7 +319,7 @@ class MotorController : public rclcpp::Node
     std::stringstream ss;
     ss << "Current position targets: ";
     std::copy(position_goals.begin(), position_goals.end(), std::ostream_iterator<float>(ss, " "));
-    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+    // RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
 
     // ==== CONTROL MODES
     if(control_mode == error){
@@ -387,7 +391,7 @@ class MotorController : public rclcpp::Node
     // Check if we have violated our watchdog timer and disable motors
     if(time_delta > control_timout_ms)
     {
-      RCLCPP_WARN(this->get_logger(), "Control message watchdog timer has run out, disabling motors!");
+      // RCLCPP_WARN(this->get_logger(), "Control message watchdog timer has run out, disabling motors!");
 
       // Disable the robot
       control_mode = disabled;

@@ -122,6 +122,7 @@ void TMotor::set_socket(int socket){
 
 // Sets the zero offset for the motor
 void TMotor::set_zero_offset(float zero_offset){
+    cout << "Start zero" << endl;
     // Depending on the motor type, figure out if it has started within it's zero window
     this->zero_offset = zero_offset;
 
@@ -130,24 +131,34 @@ void TMotor::set_zero_offset(float zero_offset){
 
     // The offset tolerance we allow the motor to be within before assuming
     // we've overrun the magnetic encoder
-    float const OFFSET_TOLERANCE_RADS = 0.01; 
+    float const OFFSET_TOLERANCE_RADS = (6.2831 / this->INTERNAL_GEAR_RATIO) * 0.5; 
+ 
+    cout << this->joint_name << endl;
+    cout << this->position << endl;
 
     // A single motor turn, measured at the gearbox output
     // TODO: this might cast to int?
-    float const ONE_MOTOR_TURN_RADS = 1.0 / this->INTERNAL_GEAR_RATIO;
+    float const ONE_MOTOR_TURN_RADS = 6.2831 / this->INTERNAL_GEAR_RATIO;
+
+    cout << this->INTERNAL_GEAR_RATIO << endl;
+    cout << this->T_MIN << endl;
 
     // Check if position has been set and if so, account for encoder overrun
     // TODO: throw an error?
     // TODO: Check that these are applied the right way around
-    if(std::isnan(this->position)){
-        if(this->position < OFFSET_TOLERANCE_RADS) {
+    if(!std::isnan(this->position)){
+        if(this->position < -OFFSET_TOLERANCE_RADS) {
+            cout << "Below" << endl;
             this->zero_offset -= ONE_MOTOR_TURN_RADS;
         }
 
         if(this->position > OFFSET_TOLERANCE_RADS) {
-            this->zero_offset += ONE_MOTOR_TURN_RADS
+            this->zero_offset += ONE_MOTOR_TURN_RADS;
+            cout << "Above" << endl;
         }
     }
+
+    cout << "end zero" << endl;
 }
 
 // Gets the zero offset for the motor
