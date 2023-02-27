@@ -48,30 +48,32 @@ class MinimalPublisher(Node):
         
         print(self.joint_states.position)
         
-        self.move_time = 5.0 # seconds
+        self.move_time = 2.0 # seconds
         self.move_steps = int(100.0 * self.move_time)
 
         self.initial_position = np.array(self.joint_states.position)
 
+        starting_position = np.array([0.0, # Right_Roll
+            0.0, # Right_Pitch
+            -0.02, # Right_Slide
+            0.0, # Right_Foot_Roll
+            0.0, # Right_Foot_Pitch
+
+            0.0, # Left_Roll
+            0.0, # Left_Pitch
+            -0.02, # Left_slide
+            0.0, # Left_Foot_Pitch
+            0.0]) # check for user input
+
         for t in range(0, self.move_steps):
             factor = 1 - t / self.move_steps
-            print(factor)
-            new_states = factor * self.initial_position
-            # print(new_states)
+            # print(factor)
+            new_states = (1.0 - factor) * starting_position + factor * self.initial_position
+            print(new_states)
 
-            roll = new_states[9]
-            pitch = new_states[8]
-
-            new_states[8] = roll
-            new_states[9] = pitch
-
-            # self.pub_joint_states(new_states)
+            self.pub_joint_states(new_states)
             time.sleep(0.01)
 
-
-        # print(self.joint_states.position[2])
-
-        self.get_logger().info("Starting the test")
 
         self.timer_period = 0.01
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -109,13 +111,13 @@ class MinimalPublisher(Node):
         msg = Float32MultiArray()
         msg.data = [0.0, # Right_Roll
                     0.0, # Right_Pitch
-                    0.0, # Right_Slide
+                    -0.03, # Right_Slide
                     0.0, # Right_Foot_Roll
                     0.0, # Right_Foot_Pitch
 
                     0.0, # Left_Roll
                     0.0, # Left_Pitch
-                    0.0, # Left_slide
+                    -0.03, # Left_slide
                     0.0, # Left_Foot_Pitch
                     0.0] # check for user input
         # print(self.initial_position)

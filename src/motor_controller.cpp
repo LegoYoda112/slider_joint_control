@@ -197,8 +197,8 @@ class MotorController : public rclcpp::Node
     // Set constants
       left_roll.set_constants(150.0, 2.0);
       left_pitch.set_constants(100.0, 2.0);
-      left_slide.set_constants(20.0, 0.0);
-      left_inner_ankle.set_constants(10.0, 1.0);
+      left_slide.set_constants(5.0, 0.05);
+      left_inner_ankle.set_constants(20.0, 0.5);
       left_outer_ankle.copy_constants(&left_inner_ankle);
 
       right_roll.copy_constants(&left_roll);
@@ -505,6 +505,7 @@ int main(int argc, char * argv[])
   auto motor_controller = std::make_shared<MotorController>();
   motor_controller.get()->start_read_threads();
 
+  RCLCPP_INFO(motor_controller.get()->get_logger(), "Threads started, spinning..");
   rclcpp::spin(motor_controller);
 
   // Disable motors and shut down
