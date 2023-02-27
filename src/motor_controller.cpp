@@ -22,10 +22,10 @@ enum ControlMode {position, torque, disabled, error};
 class MotorController : public rclcpp::Node
 {
   public: // ============================ PUBLIC
-  MotorController() : Node("joint_controller")
+  MotorController() : Node("motor_controller")
   {
     // Log that we're starting
-    RCLCPP_INFO(this->get_logger(), "Starting SLIDER joint control");
+    RCLCPP_INFO(this->get_logger(), "Starting SLIDER motor control");
 
 
     // Make position subscriber

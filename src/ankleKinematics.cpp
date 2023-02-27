@@ -1,7 +1,7 @@
 #include <math.h>
 #include <iostream>
 
-#include <chrono>
+#include "ankleKinematics.h"
 
 void ankleIK(float alpha, float beta, float &motor_1, float &motor_2)
 {
@@ -64,7 +64,7 @@ void ankleIK(float alpha, float beta, float &motor_1, float &motor_2)
     motor_2 = asin((b * c + sqrt(b * b * c * c - (a * a + b * b) * (c * c - a * a))) / (a * a + b * b));
 }
 
-float ankleFK(float motor_1, float motor_2)
+void ankleFK(float motor_1, float motor_2, float &alpha, float &beta)
 {   
     float roll = 0.0;
     float pitch = 0.0;
@@ -72,7 +72,7 @@ float ankleFK(float motor_1, float motor_2)
     float motor_1_measured;
     float motor_2_measured;
 
-    for(int i = 0; i < 8; i++)
+    for(int i = 0; i < 10; i++)
     {
         // std::cout << "Iteration number:" << i << std::endl;
         ankleIK(roll, pitch, motor_1_measured, motor_2_measured);
@@ -92,8 +92,6 @@ float ankleFK(float motor_1, float motor_2)
         // std::cout << roll / (M_PI / 180.0) << std::endl;
         // std::cout << pitch / (M_PI / 180.0) << std::endl;
     }
-
-    return 0.0;
 }
 
 int main()
