@@ -349,7 +349,7 @@ class MotorController : public rclcpp::Node
       // TODO: Figure out why it only works here
       left_roll.set_constants(150.0, 2.0);
       left_pitch.set_constants(100.0, 2.0);
-      left_slide.set_constants(20.0, 0.0);
+      left_slide.set_constants(10.0, 0.0);
       // left_slide.set_constants(0.0, 0.0);
       left_inner_ankle.set_constants(10.0, 1.0);
       left_outer_ankle.copy_constants(&left_inner_ankle);

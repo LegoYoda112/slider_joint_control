@@ -28,8 +28,8 @@ class MinimalPublisher(Node):
 
         self.amplitude_rad = 0.5
 
-        self.start_frequency_hz = 1.0
-        self.end_frequency_hz = 1.0
+        self.start_frequency_hz = 0.1
+        self.end_frequency_hz = 0.1
 
         self.sweep_time_s = 100.0
 
@@ -48,25 +48,25 @@ class MinimalPublisher(Node):
         
         print(self.joint_states.position)
         
-        self.move_time = 1.0 # seconds
+        self.move_time = 5.0 # seconds
         self.move_steps = int(100.0 * self.move_time)
 
         self.initial_position = np.array(self.joint_states.position)
 
-        # for t in range(0, self.move_steps):
-        #     factor = 1 - t / self.move_steps
-        #     print(factor)
-        #     new_states = factor * self.initial_position
-        #     # print(new_states)
+        for t in range(0, self.move_steps):
+            factor = 1 - t / self.move_steps
+            print(factor)
+            new_states = factor * self.initial_position
+            # print(new_states)
 
-        #     roll = new_states[9]
-        #     pitch = new_states[8]
+            roll = new_states[9]
+            pitch = new_states[8]
 
-        #     new_states[8] = roll
-        #     new_states[9] = pitch
+            new_states[8] = roll
+            new_states[9] = pitch
 
-        #     self.pub_joint_states(new_states)
-        #     time.sleep(0.01)
+            # self.pub_joint_states(new_states)
+            time.sleep(0.01)
 
 
         # print(self.joint_states.position[2])
@@ -75,8 +75,6 @@ class MinimalPublisher(Node):
 
         self.timer_period = 0.01
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
-
-    def increment
 
     def joint_callback(self, msg):
         self.joint_states = msg
@@ -106,7 +104,7 @@ class MinimalPublisher(Node):
 
         # Get target angle
         angle = self.amplitude_rad * sin(self.t * freq_rads)
-        length = 0.1 * sin(self.t * freq_rads)
+        length = 0.05 * sin(self.t * freq_rads)
 
         msg = Float32MultiArray()
         msg.data = [0.0, # Right_Roll
@@ -119,11 +117,12 @@ class MinimalPublisher(Node):
                     0.0, # Left_Pitch
                     0.0, # Left_slide
                     0.0, # Left_Foot_Pitch
-                    0.0]check for user input
-        print(self.initial_position)
+                    0.0] # check for user input
+        # print(self.initial_position)
+        print(msg.data)
 
 
-        msg.data = list(self.initial_position)
+        # msg.data = list(self.initial_position)
 
         # If we have reached the end of the test, finish
         # if(self.t > self.sweep_time_s):
