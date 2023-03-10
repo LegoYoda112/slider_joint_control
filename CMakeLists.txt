@@ -20,7 +20,13 @@ install(DIRECTORY launch urdf rviz meshes
 )
 
 # add_executable(motor_controller src/motor_controller.cpp src/MotorManager.cpp src/TMotor.cpp src/canbus.cpp)
-add_executable(ankle_kinematics src/ankle_kinematics.cpp)
+add_executable(ankle_kinematics src/ankleKinematics.cpp)
+
+
+target_include_directories(ankle_kinematics PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(ankle_kinematics PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 
 # target_include_directories(motor_controller PUBLIC
