@@ -4,23 +4,41 @@
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 
+using std::placeholders::_1;
+using namespace std::chrono_literals;
+
+
 class JointController : public rclcpp::Node
 {   
     private:
         const float SLIDE_TRANSMISSION_RATIO = 0.013;
-        const int RIGHT_SLIDE_ID = 2;
-        const int LEFT_SLIDE_ID = 7;
 
+        const int RIGHT_ROLL_ID = 0;
+        const int RIGHT_PITCH_ID = 1;
+        const int RIGHT_SLIDE_ID = 2;
         const int RIGHT_INNER_ANKLE_ID = 3;
         const int RIGHT_OUTER_ANKLE_ID = 4;
+
+        const int RIGHT_ANKLE_ROLL_ID = 3;
+        const int RIGHT_ANKLE_PITCH_ID = 4;
+
+        const int LEFT_ROLL_ID = 5;
+        const int LEFT_PITCH_ID = 6;
+        const int LEFT_SLIDE_ID = 7;
         const int LEFT_INNER_ANKLE_ID = 8;
         const int LEFT_OUTER_ANKLE_ID = 9;
+
+        const int LEFT_ANKLE_ROLL_ID = 8;
+        const int LEFT_ANKLE_PITCH_ID = 9;
 
     
     public:
 
 
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr motor_position_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr joint_position_sub_;  
+    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr motor_state_sub_;
 
 
     JointController() : Node("joint_controller")
@@ -53,34 +71,103 @@ class JointController : public rclcpp::Node
             return;
         }
 
-        float motor_targets[10];
+        std::vector<float[10]> motor_targets;
 
         // Hip roll and pitch
-        motor_targets[0] = msg.data[0];
-        motor_targets[1] = msg.data[1];
+        motor_targets[RIGHT_ROLL_ID] = msg->data[RIGHT_ROLL_ID];
+        motor_targets[RIGHT_PITCH_ID] = msg->data[RIGHT_PITCH_ID];
 
-        motor_targets[5] = msg.data[5];
-        motor_targets[6] = msg.data[6];
+        motor_targets[LEFT_ROLL_ID] = msg->data[LEFT_ROLL_ID];
+        motor_targets[RIGHT_ROLL_ID] = msg->data[RIGHT_ROLL_ID];
 
         // Slide
-        motor_targets[RIGHT_SLIDE_ID] = msg.data[RIGHT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
-        motor_targets[LEFT_SLIDE_ID] = msg.data[LEFT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
+        motor_targets[RIGHT_SLIDE_ID] = msg->data[RIGHT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
+        motor_targets[LEFT_SLIDE_ID] = msg->data[LEFT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
         
         // Right ankle inverse kinematics
         float motor_left;
         float motor_right;
-        ankleIK(msg.data[3], msg.data[4], motor_left, motor_right);
+
+        ankleIK(msg->data[RIGHT_ROLL_ID], msg->data[RIGHT_PITCH_ID], motor_left, motor_right);
         motor_targets[RIGHT_INNER_ANKLE_ID] = motor_left;
         motor_targets[RIGHT_OUTER_ANKLE_ID] = motor_right;
 
         // Left ankle
-        ankleIK(msg.data[8], msg.data[9], motor_left, motor_right);
+        ankleIK(msg->data[LEFT_ROLL_ID], msg->data[RIGHT_ROLL_ID], motor_left, motor_right);
         motor_targets[LEFT_OUTER_ANKLE_ID] = motor_left;
         motor_targets[LEFT_INNER_ANKLE_ID] = motor_right;
         
-        std_msgs::msg::Float32MultiArray output = output_msg;
+        std_msgs::msg::Float32MultiArray output_msg;
         output_msg.data = motor_targets;
 
         motor_position_pub_->publish(output_msg);
     }
-}
+
+    void motor_state_callback (sensor_msgs::msg::JointState::ConstPtr& motor_state)
+    {
+        sensor_msgs::msg::JointState joint_state;
+
+        // Resize arrays
+        joint_state.name.resize(10);
+        joint_state.position.resize(10);
+        joint_state.velocity.resize(10);
+        joint_state.effort.resize(10);
+
+
+        // Right Leg
+        joint_state.name[RIGHT_ROLL_ID] = "Right_Roll";
+        joint_state.position[RIGHT_ROLL_ID] = motor_state->position[RIGHT_ROLL_ID];
+        joint_state.velocity[RIGHT_ROLL_ID] = motor_state->velocity[RIGHT_ROLL_ID];
+
+        joint_state.name[RIGHT_PITCH_ID] = "Right_Pitch";
+        joint_state.position[RIGHT_PITCH_ID] = motor_state->position[RIGHT_PITCH_ID];
+        joint_state.velocity[RIGHT_PITCH_ID] = motor_state->velocity[RIGHT_PITCH_ID];
+
+        joint_state.name[RIGHT_SLIDE_ID] = "Right_Slide";
+        joint_state.position[RIGHT_SLIDE_ID] = motor_state->position[RIGHT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
+        joint_state.velocity[RIGHT_SLIDE_ID] = motor_state->velocity[RIGHT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
+
+        float right_foot_roll;
+        float right_foot_pitch;
+
+        float right_foot_roll_vel;
+        float right_foot_pitch_vel;
+
+        float right_inner_position = motor_state->position[RIGHT_INNER_ANKLE_ID];
+        float right_inner_velocity = motor_state->velocity[RIGHT_INNER_ANKLE_ID];
+        float right_outer_position = motor_state->position[RIGHT_OUTER_ANKLE_ID];
+        float right_outer_velocity = motor_state->velocity[RIGHT_OUTER_ANKLE_ID];
+
+        ankleIK(right_inner_position, right_outer_position, right_foot_roll, right_foot_pitch);
+        ankleFKvel(right_inner_position, right_outer_position, right_inner_velocity, right_inner_velocity, right_foot_roll_vel, right_foot_pitch_vel, 0.05);
+
+        joint_state.name[RIGHT_ANKLE_ROLL_ID] = "Right_Foot_Roll";
+        joint_state.position[RIGHT_ANKLE_ROLL_ID] = right_foot_roll;
+        joint_state.velocity[RIGHT_ANKLE_ROLL_ID] = right_foot_roll_vel;
+
+        joint_state.name[RIGHT_ANKLE_PITCH_ID] = "Right_Foot_Pitch";
+        joint_state.position[RIGHT_ANKLE_PITCH_ID] = right_foot_pitch;
+        joint_state.velocity[RIGHT_ANKLE_PITCH_ID] = right_foot_pitch_vel;
+
+
+
+        // Left Leg
+        joint_state.name[LEFT_ROLL_ID] = "Left_Roll";
+        joint_state.position[LEFT_ROLL_ID] = motor_state->position[LEFT_ROLL_ID];
+        joint_state.velocity[LEFT_ROLL_ID] = motor_state->velocity[LEFT_ROLL_ID];
+
+        joint_state.name[LEFT_PITCH_ID] = "Left_Pitch";
+        joint_state.position[LEFT_PITCH_ID] = motor_state->position[LEFT_PITCH_ID];
+        joint_state.velocity[LEFT_PITCH_ID] = motor_state->velocity[LEFT_PITCH_ID];
+
+        joint_state.name[LEFT_SLIDE_ID] = "Left_Slide";
+        joint_state.position[LEFT_SLIDE_ID] = motor_state->position[LEFT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
+        joint_state.velocity[LEFT_SLIDE_ID] = motor_state->velocity[LEFT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
+
+        joint_state.name[8] = "Left_Foot_Roll";
+
+        joint_state.name[9] = "Left_Foot_Pitch";
+
+        joint_state_pub_->publish(joint_state);
+    }
+};
