@@ -1,6 +1,9 @@
 #ifndef ANKLE_KINEMATICS_H
 #define ANKLE_KINEMATICS_H
 
+namespace ankleKinematics
+{
+
 /**
 * Performs ankle Inverse Kinematics going from joint space to motor space
 * @param alpha The ankle's roll
@@ -31,5 +34,7 @@ void ankleFK(float motor_1, float motor_2, float &alpha, float &beta);
 * @param dt Time delta to perform difference over
 */
 void ankleFKvel(float motor_1, float motor_2, float motor_1_v, float motor_2_v, float &alpha_v, float &beta_v, float dt);
+
+}
 
 #endif

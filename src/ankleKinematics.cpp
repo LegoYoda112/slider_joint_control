@@ -2,6 +2,8 @@
 #include <iostream>
 
 #include "slider_joint_control/ankleKinematics.h"
+namespace ankleKinematics
+{
 
 void ankleIK(float alpha, float beta, float &motor_1, float &motor_2)
 {
@@ -113,39 +115,41 @@ void ankleFKvel(float motor_1, float motor_2, float motor_1_v, float motor_2_v, 
     beta_v = (beta_0 - beta_1) / dt;
 }
 
-int main()
-{
-    // // initialise alpha and beta
-    // float alpha;
-    // float beta;
-    // // get the values for alpha and beta
-    // std::cout << "Insert the roll angle: ";
-    // std::cin >> alpha;
-    // std::cout << "Insert the pitch angle: ";
-    // std::cin >> beta;
-
-    float alpha_v;
-    float beta_v;
-
-    // ankleIK(alpha * M_PI / 180.0, beta * M_PI / 180.0, motor_1, motor_2);
-
-    // ankleIK(10.0 * M_PI / 180.0, -10.0 * M_PI / 180.0, motor_1, motor_2);
-
-    // std::cout << "motor 1 = " << (motor_1 / (M_PI / 180.0)) << "\n";
-    // std::cout << "motor 2 = " << (motor_2 / (M_PI / 180.0)) << "\n";
-
-    // auto start = std::chrono::high_resolution_clock::now();
-    // ankleFK(-4.0 * (M_PI / 180.0), 7.0 * (M_PI / 180.0));
-
-    ankleFKvel(0.0, 0.0, -1.0, 1.0, alpha_v, beta_v, 0.01);
-
-    std::cout << alpha_v << std::endl;
-    std::cout << beta_v << std::endl;
-    // auto stop = std::chrono::high_resolution_clock::now();
-
-    // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-
-    // std::cout << duration.count() << std::endl;
-
-    return 0;
 }
+
+// int main()
+// {
+//     // // initialise alpha and beta
+//     // float alpha;
+//     // float beta;
+//     // // get the values for alpha and beta
+//     // std::cout << "Insert the roll angle: ";
+//     // std::cin >> alpha;
+//     // std::cout << "Insert the pitch angle: ";
+//     // std::cin >> beta;
+
+//     float alpha_v;
+//     float beta_v;
+
+//     // ankleIK(alpha * M_PI / 180.0, beta * M_PI / 180.0, motor_1, motor_2);
+
+//     // ankleIK(10.0 * M_PI / 180.0, -10.0 * M_PI / 180.0, motor_1, motor_2);
+
+//     // std::cout << "motor 1 = " << (motor_1 / (M_PI / 180.0)) << "\n";
+//     // std::cout << "motor 2 = " << (motor_2 / (M_PI / 180.0)) << "\n";
+
+//     // auto start = std::chrono::high_resolution_clock::now();
+//     // ankleFK(-4.0 * (M_PI / 180.0), 7.0 * (M_PI / 180.0));
+
+//     ankleFKvel(0.0, 0.0, -1.0, 1.0, alpha_v, beta_v, 0.01);
+
+//     std::cout << alpha_v << std::endl;
+//     std::cout << beta_v << std::endl;
+//     // auto stop = std::chrono::high_resolution_clock::now();
+
+//     // auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+
+//     // std::cout << duration.count() << std::endl;
+
+//     return 0;
+// }

@@ -8,9 +8,6 @@ using std::placeholders::_1;
 using namespace std::chrono_literals;
 
 
-using std::placeholders::_1;
-
-
 class JointController : public rclcpp::Node
 {   
     private:
@@ -73,40 +70,40 @@ class JointController : public rclcpp::Node
             RCLCPP_ERROR(this->get_logger(), "Incorrect array length published");
             return;
         }
+        
+        RCLCPP_INFO(this->get_logger(), "Recived");
 
-        std::vector<float[10]> motor_targets;
+        std_msgs::msg::Float32MultiArray output_msg;
+        output_msg.data.resize(10);
 
         // Hip roll and pitch
-        motor_targets[RIGHT_ROLL_ID] = msg->data[RIGHT_ROLL_ID];
-        motor_targets[RIGHT_PITCH_ID] = msg->data[RIGHT_PITCH_ID];
+        output_msg.data[RIGHT_ROLL_ID] = msg->data[RIGHT_ROLL_ID];
+        output_msg.data[RIGHT_PITCH_ID] = msg->data[RIGHT_PITCH_ID];
 
-        motor_targets[LEFT_ROLL_ID] = msg->data[LEFT_ROLL_ID];
-        motor_targets[RIGHT_ROLL_ID] = msg->data[RIGHT_ROLL_ID];
+        output_msg.data[LEFT_ROLL_ID] = msg->data[LEFT_ROLL_ID];
+        output_msg.data[RIGHT_ROLL_ID] = msg->data[RIGHT_ROLL_ID];
 
         // Slide
-        motor_targets[RIGHT_SLIDE_ID] = msg->data[RIGHT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
-        motor_targets[LEFT_SLIDE_ID] = msg->data[LEFT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
+        output_msg.data[RIGHT_SLIDE_ID] = msg->data[RIGHT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
+        output_msg.data[LEFT_SLIDE_ID] = msg->data[LEFT_SLIDE_ID] / SLIDE_TRANSMISSION_RATIO;
         
         // Right ankle inverse kinematics
         float motor_left;
         float motor_right;
 
-        ankleIK(msg->data[RIGHT_ROLL_ID], msg->data[RIGHT_PITCH_ID], motor_left, motor_right);
-        motor_targets[RIGHT_INNER_ANKLE_ID] = motor_left;
-        motor_targets[RIGHT_OUTER_ANKLE_ID] = motor_right;
+        ankleKinematics::ankleIK(msg->data[RIGHT_ANKLE_ROLL_ID], msg->data[RIGHT_ANKLE_PITCH_ID], motor_left, motor_right);
+        output_msg.data[RIGHT_INNER_ANKLE_ID] = motor_left;
+        output_msg.data[RIGHT_OUTER_ANKLE_ID] = motor_right;
 
         // Left ankle
-        ankleIK(msg->data[LEFT_ROLL_ID], msg->data[RIGHT_ROLL_ID], motor_left, motor_right);
-        motor_targets[LEFT_OUTER_ANKLE_ID] = motor_left;
-        motor_targets[LEFT_INNER_ANKLE_ID] = motor_right;
-        
-        std_msgs::msg::Float32MultiArray output_msg;
-        output_msg.data = motor_targets;
+        ankleKinematics::ankleIK(msg->data[LEFT_ANKLE_ROLL_ID], msg->data[RIGHT_ANKLE_ROLL_ID], motor_left, motor_right);
+        output_msg.data[LEFT_OUTER_ANKLE_ID] = motor_left;
+        output_msg.data[LEFT_INNER_ANKLE_ID] = motor_right;
 
         motor_position_pub_->publish(output_msg);
     }
 
-    void motor_state_callback (sensor_msgs::msg::JointState::ConstPtr& motor_state)
+    void motor_state_callback (const sensor_msgs::msg::JointState::ConstPtr& motor_state)
     {
         sensor_msgs::msg::JointState joint_state;
 
@@ -141,8 +138,8 @@ class JointController : public rclcpp::Node
         float right_outer_position = motor_state->position[RIGHT_OUTER_ANKLE_ID];
         float right_outer_velocity = motor_state->velocity[RIGHT_OUTER_ANKLE_ID];
 
-        ankleIK(right_inner_position, right_outer_position, right_foot_roll, right_foot_pitch);
-        ankleFKvel(right_inner_position, right_outer_position, right_inner_velocity, right_inner_velocity, right_foot_roll_vel, right_foot_pitch_vel, 0.05);
+        ankleKinematics::ankleIK(right_inner_position, right_outer_position, right_foot_roll, right_foot_pitch);
+        ankleKinematics::ankleFKvel(right_inner_position, right_outer_position, right_inner_velocity, right_inner_velocity, right_foot_roll_vel, right_foot_pitch_vel, 0.05);
 
         joint_state.name[RIGHT_ANKLE_ROLL_ID] = "Right_Foot_Roll";
         joint_state.position[RIGHT_ANKLE_ROLL_ID] = right_foot_roll;
@@ -174,3 +171,18 @@ class JointController : public rclcpp::Node
         joint_state_pub_->publish(joint_state);
     }
 };
+
+// Init and start node
+int main(int argc, char * argv[])
+{ 
+  rclcpp::init(argc, argv);
+
+  // Make node and spin
+  auto joint_controller = std::make_shared<JointController>();
+
+  rclcpp::spin(joint_controller);
+
+  rclcpp::shutdown();
+
+  return 0;
+}
