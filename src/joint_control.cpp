@@ -8,6 +8,9 @@ using std::placeholders::_1;
 using namespace std::chrono_literals;
 
 
+using std::placeholders::_1;
+
+
 class JointController : public rclcpp::Node
 {   
     private:
