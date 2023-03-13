@@ -195,10 +195,10 @@ class MotorController : public rclcpp::Node
   void set_position_constants()
   {
     // Set constants
-      left_roll.set_constants(150.0, 2.0);
-      left_pitch.set_constants(100.0, 2.0);
-      left_slide.set_constants(5.0, 0.05);
-      left_inner_ankle.set_constants(20.0, 0.5);
+      left_roll.set_constants(100.0, 3.0);
+      left_pitch.set_constants(100.0, 3.0);
+      left_slide.set_constants(2.0, 1.0);
+      left_inner_ankle.set_constants(15.0, 0.5);
       left_outer_ankle.copy_constants(&left_inner_ankle);
 
       right_roll.copy_constants(&left_roll);

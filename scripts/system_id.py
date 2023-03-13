@@ -55,13 +55,13 @@ class MinimalPublisher(Node):
 
         starting_position = np.array([0.0, # Right_Roll
             0.0, # Right_Pitch
-            -0.02, # Right_Slide
+            -0.03, # Right_Slide
             0.0, # Right_Foot_Roll
             0.0, # Right_Foot_Pitch
 
             0.0, # Left_Roll
             0.0, # Left_Pitch
-            -0.02, # Left_slide
+            -0.03, # Left_slide
             0.0, # Left_Foot_Pitch
             0.0]) # check for user input
 
