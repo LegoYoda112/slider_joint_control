@@ -170,14 +170,16 @@ class MotorController : public rclcpp::Node
     // TODO: Hangs if motors don't respond, might be best to add some sort of timeout here
     // and throw an exception
 
-    RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
-    left_leg_motors.enable_all();
-    left_leg_motors.read_all();
-
-
+    // I think that's actually a good feature?
     RCLCPP_INFO(this->get_logger(), "Enabling right motors");
     right_leg_motors.enable_all();
+    right_leg_motors.send_all_zero();
     right_leg_motors.read_all();
+
+    RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
+    left_leg_motors.enable_all();
+    left_leg_motors.send_all_zero();
+    left_leg_motors.read_all();
   }
 
   void home()
@@ -194,10 +196,10 @@ class MotorController : public rclcpp::Node
   void set_position_constants()
   {
     // Set constants
-      left_roll.set_constants(150.0, 2.0);
-      left_pitch.set_constants(100.0, 2.0);
-      left_slide.set_constants(20.0, 0.0);
-      left_inner_ankle.set_constants(10.0, 1.0);
+      left_roll.set_constants(100.0, 3.0);
+      left_pitch.set_constants(100.0, 3.0);
+      left_slide.set_constants(2.0, 1.0);
+      left_inner_ankle.set_constants(15.0, 0.5);
       left_outer_ankle.copy_constants(&left_inner_ankle);
 
       right_roll.copy_constants(&left_roll);
@@ -318,7 +320,7 @@ class MotorController : public rclcpp::Node
     std::stringstream ss;
     ss << "Current position targets: ";
     std::copy(position_goals.begin(), position_goals.end(), std::ostream_iterator<float>(ss, " "));
-    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+    // RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
 
     // ==== CONTROL MODES
     if(control_mode == error){
@@ -390,7 +392,7 @@ class MotorController : public rclcpp::Node
     // Check if we have violated our watchdog timer and disable motors
     if(time_delta > control_timout_ms)
     {
-      RCLCPP_WARN(this->get_logger(), "Control message watchdog timer has run out, disabling motors!");
+      // RCLCPP_WARN(this->get_logger(), "Control message watchdog timer has run out, disabling motors!");
 
       // Disable the robot
       control_mode = disabled;
@@ -504,6 +506,7 @@ int main(int argc, char * argv[])
   auto motor_controller = std::make_shared<MotorController>();
   motor_controller.get()->start_read_threads();
 
+  RCLCPP_INFO(motor_controller.get()->get_logger(), "Threads started, spinning..");
   rclcpp::spin(motor_controller);
 
   // Disable motors and shut down
