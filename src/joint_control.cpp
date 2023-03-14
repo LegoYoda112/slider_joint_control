@@ -6,6 +6,7 @@
 
 using std::placeholders::_1;
 using namespace std::chrono_literals;
+using namespace std;
 
 
 class JointController : public rclcpp::Node
@@ -56,8 +57,12 @@ class JointController : public rclcpp::Node
         motor_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>
         ("slider/control/motor/states", 10, std::bind(&JointController::motor_state_callback, this, _1));
         
+        float motor_1;
+        float motor_2;
+        ankleKinematics::ankleIK(0.0, 0.0, motor_1, motor_2);
 
-        
+        cout << motor_1 << endl;
+        cout << motor_2 << endl;
     }
     
 

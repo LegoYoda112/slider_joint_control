@@ -25,12 +25,12 @@ void ankleIK(float alpha, float beta, float &motor_1, float &motor_2)
     //            gamma = (float)  : The required position of the motor in radians
 
     float lBar = -40.0; // mm
-    float lRod = 192.5; // mm
+    float lRod = 194.0; // mm //measured 14 march, might be wrong
 
     // position of the motor
-    float rA_y = -57.800;    
+    float rA_y = -57.800;
     float rA_x = -60.000;
-    float rA_z = 186.000;
+    float rA_z = 183.000; // measured 14 march
 
     // the connection of the rod to the foot
     float rCo_x = -48.94180;

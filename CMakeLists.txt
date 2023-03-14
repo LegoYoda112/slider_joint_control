@@ -19,15 +19,10 @@ install(DIRECTORY launch urdf rviz meshes
     DESTINATION share/${PROJECT_NAME}
 )
 
-# add_executable(motor_controller src/motor_controller.cpp src/MotorManager.cpp src/TMotor.cpp src/canbus.cpp)
-# add_executable(ankle_kinematics src/ankleKinematics.cpp)
+add_executable(motor_controller src/motor_controller.cpp src/MotorManager.cpp src/TMotor.cpp src/canbus.cpp)
 add_executable(joint_control src/joint_control.cpp src/ankleKinematics.cpp)
 
 
-# target_include_directories(ankle_kinematics PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
-# target_compile_features(ankle_kinematics PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 target_include_directories(joint_control PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -35,11 +30,11 @@ target_include_directories(joint_control PUBLIC
 target_compile_features(joint_control PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(joint_control rclcpp std_msgs sensor_msgs)
 
-# target_include_directories(motor_controller PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
-# target_compile_features(motor_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-# ament_target_dependencies(motor_controller rclcpp std_msgs sensor_msgs)
+target_include_directories(motor_controller PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(motor_controller PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(motor_controller rclcpp std_msgs sensor_msgs)
 
 # target_include_directories(test_node PUBLIC
 #   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -63,8 +58,8 @@ install(PROGRAMS
   DESTINATION lib/${PROJECT_NAME} 
 )
 
-# install(TARGETS motor_controller
-#   DESTINATION lib/${PROJECT_NAME})
+install(TARGETS motor_controller
+  DESTINATION lib/${PROJECT_NAME})
 
 install(TARGETS joint_control
   DESTINATION lib/${PROJECT_NAME})

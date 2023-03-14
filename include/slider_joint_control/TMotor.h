@@ -51,6 +51,9 @@ class TMotor
         float MIN = -12.5;
         float MAX = 12.5;
 
+        // Inverted
+        float inverted = 1.0;
+
     public:
         string joint_name = "default";
         string motor_type;

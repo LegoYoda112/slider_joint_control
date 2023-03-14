@@ -60,7 +60,7 @@ class MotorController : public rclcpp::Node
     // home();
 
     // Set constants
-    set_constants();
+    set_position_constants();
 
     // Start the control loop timer
     control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
@@ -102,6 +102,7 @@ class MotorController : public rclcpp::Node
     right_leg_motors.add_motor(&right_slide);
     right_leg_motors.add_motor(&right_inner_ankle);
     right_leg_motors.add_motor(&right_outer_ankle);
+    // right_outer_ankle.invert();
 
     // Print out motor names
     right_leg_motors.print_all_motors();
@@ -168,13 +169,15 @@ class MotorController : public rclcpp::Node
     // Send enable commands to each motor and read responses
     // TODO: Hangs if motors don't respond, might be best to add some sort of timeout here
     // and throw an exception
-    RCLCPP_INFO(this->get_logger(), "Enabling right motors");
-    right_leg_motors.enable_all();
-    right_leg_motors.read_all();
 
     RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
     left_leg_motors.enable_all();
     left_leg_motors.read_all();
+
+
+    RCLCPP_INFO(this->get_logger(), "Enabling right motors");
+    right_leg_motors.enable_all();
+    right_leg_motors.read_all();
   }
 
   void home()
@@ -346,7 +349,7 @@ class MotorController : public rclcpp::Node
 
       // Set position control constants
       // NOTE: Might be a bug
-      set_constants();
+      set_position_constants();
 
       // Send position goals
       right_roll.send_position_goal(position_goals[0]);

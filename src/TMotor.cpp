@@ -102,9 +102,9 @@ void TMotor::unpack_motor_response(uint8_t* data, float &p, float &v, float &i){
 
     // Converts to floats
     // I don't really like putting the zero offset at this level, but here we are
-    p = uint_to_float(p_int, P_MIN, P_MAX, 16) - this->zero_offset;
-    v = uint_to_float(v_int, V_MIN, V_MAX, 12);
-    i = uint_to_float(i_int, T_MIN, T_MAX, 12);
+    p = uint_to_float(p_int, P_MIN, P_MAX, 16) * this->inverted - this->zero_offset;
+    v = uint_to_float(v_int, V_MIN, V_MAX, 12) * this->inverted;
+    i = uint_to_float(i_int, T_MIN, T_MAX, 12) * this->inverted;
 }
 
 // =========== SET FUNCTIONS
@@ -145,7 +145,7 @@ void TMotor::set_zero_offset(float zero_offset){
         }
 
         if(this->position > OFFSET_TOLERANCE_RADS) {
-            this->zero_offset += ONE_MOTOR_TURN_RADS
+            this->zero_offset += ONE_MOTOR_TURN_RADS;
         }
     }
 }
@@ -174,10 +174,11 @@ void TMotor::copy_constants(TMotor *motor){
 }
 
 void TMotor::invert(){
+    this->inverted = -this->inverted;
     this->MIN = -this->MAX;
     this->MAX = -this->MIN;
 
-    this->transmission_ratio = -this->transmission_ratio;
+    // this->transmission_ratio = -this->transmission_ratio;
 }
 
 // =========== GET FUNCTIONS
@@ -288,7 +289,7 @@ void TMotor::send_position_goal(float position, float torque_feedforward){
     // cout << "Sending position goal" << endl;
     // cout << this->kP << endl;
 
-    this->send_motor_cmd(position + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward);
+    this->send_motor_cmd(position * this->inverted + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward * this->inverted);
 
     // Read motor's position, velocity and torque response
     //this->read_motor_response();
@@ -296,7 +297,7 @@ void TMotor::send_position_goal(float position, float torque_feedforward){
 
 // Sends a velocity goal
 void TMotor::send_velocity_goal(float velocity, float torque_feedforward){
-    this->send_motor_cmd(0.0, velocity, 0.0, this->kD, torque_feedforward);
+    this->send_motor_cmd(0.0, velocity * this->inverted, 0.0, this->kD, torque_feedforward * this->inverted);
 
     // Read motor's position, velocity and torque response
     // this->read_motor_response();
@@ -304,7 +305,7 @@ void TMotor::send_velocity_goal(float velocity, float torque_feedforward){
 
 // Sends a torque goal
 void TMotor::send_torque_goal(float torque){
-    this->send_motor_cmd(0.0, 0.0, 0.0, 0.0, torque);
+    this->send_motor_cmd(0.0, 0.0, 0.0, 0.0, torque * this->inverted);
 
     // Read motor's position, velocity and torque response
     //this->read_motor_response();
