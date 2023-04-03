@@ -63,6 +63,14 @@ class JointController : public rclcpp::Node
 
         cout << motor_1 << endl;
         cout << motor_2 << endl;
+        
+        float alpha;
+        float beta;
+
+        ankleKinematics::ankleFK(0.18, 0.18, alpha, beta);
+
+        cout << alpha << endl;
+        cout << beta << endl;
     }
     
 
@@ -96,12 +104,12 @@ class JointController : public rclcpp::Node
         float motor_left;
         float motor_right;
 
-        ankleKinematics::ankleIK(msg->data[RIGHT_ANKLE_ROLL_ID], msg->data[RIGHT_ANKLE_PITCH_ID], motor_left, motor_right);
+        ankleKinematics::ankleIK(-msg->data[RIGHT_ANKLE_PITCH_ID], -msg->data[RIGHT_ANKLE_ROLL_ID], motor_right, motor_left);
         output_msg.data[RIGHT_INNER_ANKLE_ID] = motor_left;
         output_msg.data[RIGHT_OUTER_ANKLE_ID] = motor_right;
 
         // Left ankle
-        ankleKinematics::ankleIK(msg->data[LEFT_ANKLE_ROLL_ID], msg->data[RIGHT_ANKLE_ROLL_ID], motor_left, motor_right);
+        ankleKinematics::ankleIK(msg->data[LEFT_ANKLE_PITCH_ID], msg->data[LEFT_ANKLE_ROLL_ID], motor_right, motor_left);
         output_msg.data[LEFT_OUTER_ANKLE_ID] = motor_left;
         output_msg.data[LEFT_INNER_ANKLE_ID] = motor_right;
 
@@ -143,18 +151,18 @@ class JointController : public rclcpp::Node
         float right_outer_position = motor_state->position[RIGHT_OUTER_ANKLE_ID];
         float right_outer_velocity = motor_state->velocity[RIGHT_OUTER_ANKLE_ID];
 
-        ankleKinematics::ankleIK(right_inner_position, right_outer_position, right_foot_roll, right_foot_pitch);
-        ankleKinematics::ankleFKvel(right_inner_position, right_outer_position, right_inner_velocity, right_inner_velocity, right_foot_roll_vel, right_foot_pitch_vel, 0.05);
+        // Calculate foot roll and pitch given motor angles
+        ankleKinematics::ankleFK(right_outer_position, right_inner_position, right_foot_roll, right_foot_pitch);
+        // Calculate foot roll and pitch velocity given motor velocities
+        ankleKinematics::ankleFKvel(right_outer_position, right_inner_position, right_outer_velocity, right_inner_velocity, right_foot_pitch_vel, right_foot_roll_vel, 0.05);
 
         joint_state.name[RIGHT_ANKLE_ROLL_ID] = "Right_Foot_Roll";
-        joint_state.position[RIGHT_ANKLE_ROLL_ID] = right_foot_roll;
-        joint_state.velocity[RIGHT_ANKLE_ROLL_ID] = right_foot_roll_vel;
+        joint_state.position[RIGHT_ANKLE_ROLL_ID] = -right_foot_roll;
+        joint_state.velocity[RIGHT_ANKLE_ROLL_ID] = -right_foot_roll_vel;
 
         joint_state.name[RIGHT_ANKLE_PITCH_ID] = "Right_Foot_Pitch";
-        joint_state.position[RIGHT_ANKLE_PITCH_ID] = right_foot_pitch;
-        joint_state.velocity[RIGHT_ANKLE_PITCH_ID] = right_foot_pitch_vel;
-
-
+        joint_state.position[RIGHT_ANKLE_PITCH_ID] = -right_foot_pitch;
+        joint_state.velocity[RIGHT_ANKLE_PITCH_ID] = -right_foot_pitch_vel;
 
         // Left Leg
         joint_state.name[LEFT_ROLL_ID] = "Left_Roll";
@@ -169,9 +177,30 @@ class JointController : public rclcpp::Node
         joint_state.position[LEFT_SLIDE_ID] = motor_state->position[LEFT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
         joint_state.velocity[LEFT_SLIDE_ID] = motor_state->velocity[LEFT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
 
-        joint_state.name[8] = "Left_Foot_Roll";
 
-        joint_state.name[9] = "Left_Foot_Pitch";
+        float left_foot_roll;
+        float left_foot_pitch;
+
+        float left_foot_roll_vel;
+        float left_foot_pitch_vel;
+
+        float left_inner_position = motor_state->position[LEFT_INNER_ANKLE_ID];
+        float left_inner_velocity = motor_state->velocity[LEFT_INNER_ANKLE_ID];
+        float left_outer_position = motor_state->position[LEFT_OUTER_ANKLE_ID];
+        float left_outer_velocity = motor_state->velocity[LEFT_OUTER_ANKLE_ID];
+
+        // Calculate foot roll and pitch given motor angles
+        ankleKinematics::ankleFK(left_outer_position, left_inner_position, left_foot_roll, left_foot_pitch);
+        // Calculate foot roll and pitch velocity given motor velocities
+        ankleKinematics::ankleFKvel(left_outer_position, left_inner_position, left_outer_velocity, left_inner_velocity, left_foot_pitch_vel, left_foot_roll_vel, 0.05);
+
+        joint_state.name[LEFT_ANKLE_ROLL_ID] = "Left_Foot_Roll";
+        joint_state.position[LEFT_ANKLE_ROLL_ID] = left_foot_roll;
+        joint_state.velocity[LEFT_ANKLE_ROLL_ID] = left_foot_roll_vel;
+
+        joint_state.name[LEFT_ANKLE_PITCH_ID] = "Left_Foot_Pitch";
+        joint_state.position[LEFT_ANKLE_PITCH_ID] = left_foot_pitch;
+        joint_state.velocity[LEFT_ANKLE_PITCH_ID] = left_foot_pitch_vel;
 
         joint_state_pub_->publish(joint_state);
     }

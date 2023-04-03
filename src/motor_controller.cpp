@@ -95,6 +95,7 @@ class MotorController : public rclcpp::Node
     left_leg_motors.add_motor(&left_pitch);
     left_leg_motors.add_motor(&left_slide);
     left_leg_motors.add_motor(&left_inner_ankle);
+    // left_inner_ankle.invert();
     left_leg_motors.add_motor(&left_outer_ankle);
 
     right_leg_motors.add_motor(&right_roll);
@@ -130,14 +131,20 @@ class MotorController : public rclcpp::Node
     right_roll.set_zero_offset(-0.02);
     right_pitch.set_zero_offset(-0.15);
     right_slide.set_zero_offset(-0.48);
-    right_inner_ankle.set_zero_offset(0.294);
-    right_outer_ankle.set_zero_offset(-0.521);
+    //right_inner_ankle.set_zero_offset(-0.2);
+    //right_outer_ankle.set_zero_offset(-0.2);
+
+    right_inner_ankle.set_zero_offset(0.3725);
+    right_outer_ankle.set_zero_offset(0.5316);
+
+    // 0.3725 0.1808
+    // -0.5316
 
     left_roll.set_zero_offset(-0.042);
     left_pitch.set_zero_offset(0.338);
     left_slide.set_zero_offset(0.007);
-    left_inner_ankle.set_zero_offset(0.077);
-    left_outer_ankle.set_zero_offset(-0.232);
+    left_inner_ankle.set_zero_offset(-0.121 - 0.18);
+    left_outer_ankle.set_zero_offset(-0.163 - 0.18);
 
     // TODO: Add into motor class
     // // Adjust zero offset if we think we've zeroed wrong
@@ -199,7 +206,7 @@ class MotorController : public rclcpp::Node
       left_roll.set_constants(100.0, 3.0);
       left_pitch.set_constants(100.0, 3.0);
       left_slide.set_constants(2.0, 1.0);
-      left_inner_ankle.set_constants(15.0, 0.5);
+      left_inner_ankle.set_constants(5.0, 0.2);
       left_outer_ankle.copy_constants(&left_inner_ankle);
 
       right_roll.copy_constants(&left_roll);
@@ -320,7 +327,7 @@ class MotorController : public rclcpp::Node
     std::stringstream ss;
     ss << "Current position targets: ";
     std::copy(position_goals.begin(), position_goals.end(), std::ostream_iterator<float>(ss, " "));
-    // RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
 
     // ==== CONTROL MODES
     if(control_mode == error){
@@ -354,16 +361,16 @@ class MotorController : public rclcpp::Node
       set_position_constants();
 
       // Send position goals
-      right_roll.send_position_goal(position_goals[0]);
-      right_pitch.send_position_goal(position_goals[1]);
-      right_slide.send_position_goal(position_goals[2]);
+      // right_roll.send_position_goal(position_goals[0]);
+      // right_pitch.send_position_goal(position_goals[1]);
+      // right_slide.send_position_goal(position_goals[2]);
       // right_slide.send_position_goal(0.0);
       right_inner_ankle.send_position_goal(position_goals[3]);
       right_outer_ankle.send_position_goal(position_goals[4]);
 
-      left_roll.send_position_goal(position_goals[5]);
-      left_pitch.send_position_goal(position_goals[6]);
-      left_slide.send_position_goal(position_goals[7]);
+      // left_roll.send_position_goal(position_goals[5]);
+      // left_pitch.send_position_goal(position_goals[6]);
+      // left_slide.send_position_goal(position_goals[7]);
       // left_slide.send_position_goal(0.0);
       left_inner_ankle.send_position_goal(position_goals[8]);
       left_outer_ankle.send_position_goal(position_goals[9]);
@@ -470,7 +477,7 @@ class MotorController : public rclcpp::Node
   ControlMode control_mode;
   std::vector<float> position_goals{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<float> torque_goals;
-  float maximum_position_change_rads = 0.3; // Maximum instant position change
+  float maximum_position_change_rads = 1.0; // Maximum instant position change
 
   // Watchdog variables
   std::chrono::steady_clock::time_point last_msg_time;

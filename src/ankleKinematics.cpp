@@ -33,7 +33,7 @@ void ankleIK(float alpha, float beta, float &motor_1, float &motor_2)
     float rA_z = 183.000; // measured 14 march
 
     // the connection of the rod to the foot
-    float rCo_x = -48.94180;
+    float rCo_x = -102.6;
     float rCo_y = -54.33013;
     float rCo_z = 0.0;
 
@@ -74,10 +74,12 @@ void ankleFK(float motor_1, float motor_2, float &alpha, float &beta)
     float motor_1_measured;
     float motor_2_measured;
 
+    // TODO: throws NaN over a certain motor value (0.64ish)
+
     for(int i = 0; i < 10; i++)
     {
         // std::cout << "Iteration number:" << i << std::endl;
-        ankleIK(roll, pitch, motor_1_measured, motor_2_measured);
+        ankleIK(pitch, roll, motor_1_measured, motor_2_measured);
 
         // std::cout << motor_1_measured / (M_PI / 180.0) << std::endl;
         // std::cout << motor_2_measured / (M_PI / 180.0) << std::endl;
@@ -88,15 +90,15 @@ void ankleFK(float motor_1, float motor_2, float &alpha, float &beta)
         // std::cout << motor_1_error / (M_PI / 180.0) << std::endl;
         // std::cout << motor_2_error / (M_PI / 180.0) << std::endl;
 
-        pitch += 0.2 * motor_1_error + 0.2 * motor_2_error;
-        roll += -0.4 * motor_1_error + 0.4 * motor_2_error;
+        roll += 0.2 * motor_1_error + 0.2 * motor_2_error;
+        pitch += -0.4 * motor_1_error + 0.4 * motor_2_error;
 
         // std::cout << roll / (M_PI / 180.0) << std::endl;
         // std::cout << pitch / (M_PI / 180.0) << std::endl;
     }
 
-    alpha = roll;
-    beta = pitch;
+    alpha = pitch;
+    beta = roll;
 }
 
 // Given motor velocities, calculate ankle velocity

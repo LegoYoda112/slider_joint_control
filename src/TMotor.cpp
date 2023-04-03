@@ -131,7 +131,7 @@ void TMotor::set_zero_offset(float zero_offset){
 
     // The offset tolerance we allow the motor to be within before assuming
     // we've overrun the magnetic encoder
-    float const OFFSET_TOLERANCE_RADS = (6.2831 / this->INTERNAL_GEAR_RATIO) * 0.5; 
+    float const OFFSET_TOLERANCE_RADS = (6.2831 / this->INTERNAL_GEAR_RATIO) * 1.0; 
  
     // cout << this->joint_name << endl;
     // cout << this->position << endl;
@@ -148,11 +148,11 @@ void TMotor::set_zero_offset(float zero_offset){
     // TODO: Check that these are applied the right way around
     if(!std::isnan(this->position)){
         if(this->position < -OFFSET_TOLERANCE_RADS) {
-            this->zero_offset -= ONE_MOTOR_TURN_RADS;
+            //this->zero_offset -= ONE_MOTOR_TURN_RADS;
         }
 
         if(this->position > OFFSET_TOLERANCE_RADS) {
-            this->zero_offset += ONE_MOTOR_TURN_RADS;
+            //this->zero_offset += ONE_MOTOR_TURN_RADS;
         }
     }
 }
@@ -296,7 +296,7 @@ void TMotor::send_position_goal(float position, float torque_feedforward){
     // cout << "Sending position goal" << endl;
     // cout << this->kP << endl;
 
-    this->send_motor_cmd(position * this->inverted + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward * this->inverted);
+    this->send_motor_cmd(position + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward * this->inverted);
 
     // Read motor's position, velocity and torque response
     //this->read_motor_response();
