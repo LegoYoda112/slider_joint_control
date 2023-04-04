@@ -104,12 +104,12 @@ class JointController : public rclcpp::Node
         float motor_left;
         float motor_right;
 
-        ankleKinematics::ankleIK(-msg->data[RIGHT_ANKLE_PITCH_ID], -msg->data[RIGHT_ANKLE_ROLL_ID], motor_right, motor_left);
+        ankleKinematics::ankleIK(-msg->data[RIGHT_ANKLE_ROLL_ID], -msg->data[RIGHT_ANKLE_PITCH_ID], motor_right, motor_left);
         output_msg.data[RIGHT_INNER_ANKLE_ID] = motor_left;
         output_msg.data[RIGHT_OUTER_ANKLE_ID] = motor_right;
 
         // Left ankle
-        ankleKinematics::ankleIK(msg->data[LEFT_ANKLE_PITCH_ID], msg->data[LEFT_ANKLE_ROLL_ID], motor_right, motor_left);
+        ankleKinematics::ankleIK(-msg->data[LEFT_ANKLE_ROLL_ID], msg->data[LEFT_ANKLE_PITCH_ID], motor_right, motor_left);
         output_msg.data[LEFT_OUTER_ANKLE_ID] = motor_left;
         output_msg.data[LEFT_INNER_ANKLE_ID] = motor_right;
 
@@ -136,9 +136,10 @@ class JointController : public rclcpp::Node
         joint_state.position[RIGHT_PITCH_ID] = motor_state->position[RIGHT_PITCH_ID];
         joint_state.velocity[RIGHT_PITCH_ID] = motor_state->velocity[RIGHT_PITCH_ID];
 
+        // NOTE ADDED A NEGATIVE
         joint_state.name[RIGHT_SLIDE_ID] = "Right_Slide";
-        joint_state.position[RIGHT_SLIDE_ID] = motor_state->position[RIGHT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
-        joint_state.velocity[RIGHT_SLIDE_ID] = motor_state->velocity[RIGHT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
+        joint_state.position[RIGHT_SLIDE_ID] = -motor_state->position[RIGHT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
+        joint_state.velocity[RIGHT_SLIDE_ID] = -motor_state->velocity[RIGHT_SLIDE_ID] * SLIDE_TRANSMISSION_RATIO;
 
         float right_foot_roll;
         float right_foot_pitch;

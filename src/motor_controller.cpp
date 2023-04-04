@@ -95,15 +95,15 @@ class MotorController : public rclcpp::Node
     left_leg_motors.add_motor(&left_pitch);
     left_leg_motors.add_motor(&left_slide);
     left_leg_motors.add_motor(&left_inner_ankle);
-    // left_inner_ankle.invert();
     left_leg_motors.add_motor(&left_outer_ankle);
+    left_inner_ankle.invert();
 
     right_leg_motors.add_motor(&right_roll);
     right_leg_motors.add_motor(&right_pitch);
     right_leg_motors.add_motor(&right_slide);
     right_leg_motors.add_motor(&right_inner_ankle);
     right_leg_motors.add_motor(&right_outer_ankle);
-    // right_outer_ankle.invert();
+    right_outer_ankle.invert();
 
     // Print out motor names
     right_leg_motors.print_all_motors();
@@ -131,11 +131,8 @@ class MotorController : public rclcpp::Node
     right_roll.set_zero_offset(-0.02);
     right_pitch.set_zero_offset(-0.15);
     right_slide.set_zero_offset(-0.48);
-    //right_inner_ankle.set_zero_offset(-0.2);
-    //right_outer_ankle.set_zero_offset(-0.2);
-
-    right_inner_ankle.set_zero_offset(0.3725);
-    right_outer_ankle.set_zero_offset(0.5316);
+    right_inner_ankle.set_zero_offset(0.3725 - 0.1808);
+    right_outer_ankle.set_zero_offset(0.5316 + 0.1808);
 
     // 0.3725 0.1808
     // -0.5316
@@ -143,8 +140,8 @@ class MotorController : public rclcpp::Node
     left_roll.set_zero_offset(-0.042);
     left_pitch.set_zero_offset(0.338);
     left_slide.set_zero_offset(0.007);
-    left_inner_ankle.set_zero_offset(-0.121 - 0.18);
-    left_outer_ankle.set_zero_offset(-0.163 - 0.18);
+    left_inner_ankle.set_zero_offset(0.1402 + 0.1808); // ?????
+    left_outer_ankle.set_zero_offset(-0.1894 - 0.1808);
 
     // TODO: Add into motor class
     // // Adjust zero offset if we think we've zeroed wrong
@@ -206,7 +203,9 @@ class MotorController : public rclcpp::Node
       left_roll.set_constants(100.0, 3.0);
       left_pitch.set_constants(100.0, 3.0);
       left_slide.set_constants(2.0, 1.0);
-      left_inner_ankle.set_constants(5.0, 0.2);
+
+      left_inner_ankle.set_position_limits(-0.45, 0.7);
+      left_inner_ankle.set_constants(20.0, 1.0);
       left_outer_ankle.copy_constants(&left_inner_ankle);
 
       right_roll.copy_constants(&left_roll);
@@ -259,7 +258,7 @@ class MotorController : public rclcpp::Node
 
       // Adjust for slide
       if(i == 2 || i == 7){
-        maximum_position_change_rads = 10.0;
+        maximum_position_change_rads = 15.0;
       }
 
       float target_difference = position_goals[i] - msg->data[i];
@@ -361,16 +360,16 @@ class MotorController : public rclcpp::Node
       set_position_constants();
 
       // Send position goals
-      // right_roll.send_position_goal(position_goals[0]);
-      // right_pitch.send_position_goal(position_goals[1]);
-      // right_slide.send_position_goal(position_goals[2]);
+      right_roll.send_position_goal(position_goals[0]);
+      right_pitch.send_position_goal(position_goals[1]);
+      right_slide.send_position_goal(position_goals[2]);
       // right_slide.send_position_goal(0.0);
       right_inner_ankle.send_position_goal(position_goals[3]);
       right_outer_ankle.send_position_goal(position_goals[4]);
 
-      // left_roll.send_position_goal(position_goals[5]);
-      // left_pitch.send_position_goal(position_goals[6]);
-      // left_slide.send_position_goal(position_goals[7]);
+      left_roll.send_position_goal(position_goals[5]);
+      left_pitch.send_position_goal(position_goals[6]);
+      left_slide.send_position_goal(position_goals[7]);
       // left_slide.send_position_goal(0.0);
       left_inner_ankle.send_position_goal(position_goals[8]);
       left_outer_ankle.send_position_goal(position_goals[9]);

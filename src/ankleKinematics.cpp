@@ -5,6 +5,10 @@
 namespace ankleKinematics
 {
 
+float clamp(float value, float minimum, float maximum){
+    return std::max(std::min(value, maximum), minimum);
+}
+
 void ankleIK(float alpha, float beta, float &motor_1, float &motor_2)
 {
     // Calculates the required position of the motor for the desired pitch (alpha) and roll (beta) using
@@ -75,6 +79,9 @@ void ankleFK(float motor_1, float motor_2, float &alpha, float &beta)
     float motor_2_measured;
 
     // TODO: throws NaN over a certain motor value (0.64ish)
+
+    motor_1 = clamp(motor_1, -0.62, 0.62);
+    motor_2 = clamp(motor_2, -0.62, 0.62);
 
     for(int i = 0; i < 10; i++)
     {

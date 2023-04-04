@@ -15,64 +15,64 @@ class MinimalPublisher(Node):
 
     def __init__(self):
         super().__init__('system_id')
-        self.publisher = self.create_publisher(Float32MultiArray, '/slider/control/motor/position_goals', 10)
+        self.publisher = self.create_publisher(Float32MultiArray, '/slider/control/joint/position_goals', 10)
         
-        # self.joint_subscriber = self.create_subscription(
-        #     JointState,
-        #     "/joint_states",
-        #     self.joint_callback,
-        #     10
-        # )        
+        self.joint_subscriber = self.create_subscription(
+            JointState,
+            "/joint_states",
+            self.joint_callback,
+            10
+        )        
 
         self.t = 0
 
-        # self.amplitude_rad = 0.5
+        self.amplitude_rad = 0.5
 
-        # self.start_frequency_hz = 0.1
-        # self.end_frequency_hz = 0.1
+        self.start_frequency_hz = 0.1
+        self.end_frequency_hz = 0.1
 
-        # self.sweep_time_s = 100.0
+        self.sweep_time_s = 100.0
 
-        # self.joint_states = None
+        self.joint_states = None
 
-        # # Wait until we have a joint state
-        # while(self.joint_states == None):
-        #     rclpy.spin_once(self)
-        #     print("waiting")
+        # Wait until we have a joint state
+        while(self.joint_states == None):
+            rclpy.spin_once(self)
+            print("waiting")
             
-        #     pass
+            pass
 
-        # for i in range(10):
-        #     rclpy.spin_once(self)
-        #     # time.sleep(0.001)
+        for i in range(10):
+            rclpy.spin_once(self)
+            # time.sleep(0.001)
         
-        # print(self.joint_states.position)
+        print(self.joint_states.position)
         
-        # self.move_time = 2.0 # seconds
-        # self.move_steps = int(100.0 * self.move_time)
+        self.move_time = 2.0 # seconds
+        self.move_steps = int(100.0 * self.move_time)
 
-        # self.initial_position = np.array(self.joint_states.position)
+        self.initial_position = np.array(self.joint_states.position)
 
-        # starting_position = np.array([0.0, # Right_Roll
-        #     0.0, # Right_Pitch
-        #     0.0, # Right_Slide
-        #     0.18, # Right_Foot_Roll
-        #     0.18, # Right_Foot_Pitch
+        starting_position = np.array([0.0, # Right_Roll
+            0.0, # Right_Pitch
+            0.0, # Right_Slide
+            0.0, # Right_Foot_Roll
+            0.0, # Right_Foot_Pitch
 
-        #     0.0, # Left_Roll
-        #     0.0, # Left_Pitch
-        #     0.0, # Left_slide
-        #     0.18, # Left_Foot_Pitch
-        #     0.18]) # check for user input
+            0.0, # Left_Roll
+            0.0, # Left_Pitch
+            0.0, # Left_slide
+            0.0, # Left_Foot_Pitch
+            0.0]) # check for user input
 
-        # for t in range(0, self.move_steps):
-        #     factor = 1 - t / self.move_steps
-        #     # print(factor)
-        #     new_states = (1.0 - factor) * starting_position + factor * self.initial_position
-        #     print(new_states)
+        for t in range(0, self.move_steps):
+            factor = 1 - t / self.move_steps
+            # print(factor)
+            new_states = (1.0 - factor) * starting_position + factor * self.initial_position
+            print(new_states)
 
-        #     self.pub_joint_states(new_states)
-        #     time.sleep(0.01)
+            self.pub_joint_states(new_states)
+            time.sleep(0.01)
 
 
         self.timer_period = 0.01
@@ -93,8 +93,8 @@ class MinimalPublisher(Node):
 
     def timer_callback(self):
         print("loop op")
-        # # Increment relative timer
-        # self.t += self.timer_period
+        # Increment relative timer
+        self.t += self.timer_period
 
         # # Find current frequency
         # freq_hz = np.interp(self.t, 
@@ -112,14 +112,14 @@ class MinimalPublisher(Node):
         msg.data = [0.0, # Right_Roll
                     0.0, # Right_Pitch
                     0.0, # Right_Slide
-                    0.0, # Right_Foot_Roll
-                    0.0, # Right_Foot_Pitch
+                    0.2 * sin(-self.t * 3.0), # Right_Foot_Roll
+                    -0.2 * cos(-self.t * 3.0), # Right_Foot_Pitch
 
                     0.0, # Left_Roll
                     0.0, # Left_Pitch
                     0.0, # Left_slide
-                    0.0, # Left_Foot_Pitch
-                    0.0] # check for user input
+                    0.2 * sin(self.t * 3.0), # Left_Foot_Roll
+                    0.2 * cos(self.t * 3.0)] # Left_Foot_Pitch
         # print(self.initial_position)
         print(msg.data)
 

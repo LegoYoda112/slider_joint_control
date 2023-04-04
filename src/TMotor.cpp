@@ -102,7 +102,7 @@ void TMotor::unpack_motor_response(uint8_t* data, float &p, float &v, float &i){
 
     // Converts to floats
     // I don't really like putting the zero offset at this level, but here we are
-    p = uint_to_float(p_int, P_MIN, P_MAX, 16) * this->inverted - this->zero_offset;
+    p = (uint_to_float(p_int, P_MIN, P_MAX, 16) - this->zero_offset) * this->inverted;
     v = uint_to_float(v_int, V_MIN, V_MAX, 12) * this->inverted;
     i = uint_to_float(i_int, T_MIN, T_MAX, 12) * this->inverted;
 }
@@ -182,8 +182,10 @@ void TMotor::copy_constants(TMotor *motor){
 
 void TMotor::invert(){
     this->inverted = -this->inverted;
-    this->MIN = -this->MAX;
-    this->MAX = -this->MIN;
+
+    // TODO: Fix this
+    //this->MIN = -this->MAX;
+    //this->MAX = -this->MIN;
 
     // this->transmission_ratio = -this->transmission_ratio;
 }
@@ -296,7 +298,7 @@ void TMotor::send_position_goal(float position, float torque_feedforward){
     // cout << "Sending position goal" << endl;
     // cout << this->kP << endl;
 
-    this->send_motor_cmd(position + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward * this->inverted);
+    this->send_motor_cmd(position * this->inverted + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward * this->inverted);
 
     // Read motor's position, velocity and torque response
     //this->read_motor_response();
