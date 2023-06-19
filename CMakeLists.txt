@@ -20,8 +20,15 @@ install(DIRECTORY launch urdf rviz meshes
 )
 
 add_executable(motor_controller src/motor_controller.cpp src/MotorManager.cpp src/TMotor.cpp src/canbus.cpp)
-# add_executable(test_node src/test_node.cpp)
+add_executable(joint_control src/joint_control.cpp src/ankleKinematics.cpp)
 
+
+
+target_include_directories(joint_control PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+target_compile_features(joint_control PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(joint_control rclcpp std_msgs sensor_msgs)
 
 target_include_directories(motor_controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -54,7 +61,7 @@ install(PROGRAMS
 install(TARGETS motor_controller
   DESTINATION lib/${PROJECT_NAME})
 
-  # install(TARGETS test_node
-  # DESTINATION lib/${PROJECT_NAME})
+install(TARGETS joint_control
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

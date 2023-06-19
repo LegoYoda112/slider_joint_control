@@ -14,7 +14,6 @@
 #include "slider_joint_control/TMotorAK60_6.h"
 #include "slider_joint_control/TMotorAK10_9.h"
 
-
 using std::placeholders::_1;
 using namespace std::chrono_literals;
 
@@ -23,10 +22,10 @@ enum ControlMode {position, torque, disabled, error};
 class MotorController : public rclcpp::Node
 {
   public: // ============================ PUBLIC
-  MotorController() : Node("joint_controller")
+  MotorController() : Node("motor_controller")
   {
     // Log that we're starting
-    RCLCPP_INFO(this->get_logger(), "Starting SLIDER joint control");
+    RCLCPP_INFO(this->get_logger(), "Starting SLIDER motor control");
 
 
     // Make position subscriber
@@ -50,6 +49,7 @@ class MotorController : public rclcpp::Node
     setup_motors();
 
     // Connect to the robot and enable motors
+    // Enable also calls read_all
     connect();
     enable();
 
@@ -60,12 +60,11 @@ class MotorController : public rclcpp::Node
     // home();
 
     // Set constants
-    set_constants();
+    set_position_constants();
 
     // Start the control loop timer
     control_loop_timer = this->create_wall_timer(10ms, std::bind(&MotorController::motor_control_loop, this));
   }
-
 
   // Start motor state read threads
   void start_read_threads()
@@ -97,13 +96,14 @@ class MotorController : public rclcpp::Node
     left_leg_motors.add_motor(&left_slide);
     left_leg_motors.add_motor(&left_inner_ankle);
     left_leg_motors.add_motor(&left_outer_ankle);
+    left_inner_ankle.invert();
 
     right_leg_motors.add_motor(&right_roll);
     right_leg_motors.add_motor(&right_pitch);
     right_leg_motors.add_motor(&right_slide);
     right_leg_motors.add_motor(&right_inner_ankle);
     right_leg_motors.add_motor(&right_outer_ankle);
-
+    right_outer_ankle.invert();
 
     // Print out motor names
     right_leg_motors.print_all_motors();
@@ -131,15 +131,17 @@ class MotorController : public rclcpp::Node
     right_roll.set_zero_offset(-0.02);
     right_pitch.set_zero_offset(-0.15);
     right_slide.set_zero_offset(-0.48);
-    right_inner_ankle.set_zero_offset(0.294);
-    right_outer_ankle.set_zero_offset(-0.521);
+    right_inner_ankle.set_zero_offset(0.3725 - 0.1808);
+    right_outer_ankle.set_zero_offset(0.5316 + 0.1808);
+
+    // 0.3725 0.1808
+    // -0.5316
 
     left_roll.set_zero_offset(-0.042);
     left_pitch.set_zero_offset(0.338);
     left_slide.set_zero_offset(0.007);
-    left_inner_ankle.set_zero_offset(0.077);
-    left_outer_ankle.set_zero_offset(-0.232);
-
+    left_inner_ankle.set_zero_offset(0.1402 + 0.1808); // ?????
+    left_outer_ankle.set_zero_offset(-0.1894 - 0.1808);
 
     // TODO: Add into motor class
     // // Adjust zero offset if we think we've zeroed wrong
@@ -158,7 +160,7 @@ class MotorController : public rclcpp::Node
 
   void connect()
   {
-    // Do the homing thing
+    // Connect both can buses
     RCLCPP_DEBUG(this->get_logger(), "Connecting to right motors");
     right_leg_motors.connect();
 
@@ -168,14 +170,20 @@ class MotorController : public rclcpp::Node
 
   void enable()
   {
-    // Enable
+    // Send enable commands to each motor and read responses
+    // TODO: Hangs if motors don't respond, might be best to add some sort of timeout here
+    // and throw an exception
+
+    // I think that's actually a good feature?
     RCLCPP_INFO(this->get_logger(), "Enabling right motors");
     right_leg_motors.enable_all();
+    right_leg_motors.send_all_zero();
+    right_leg_motors.read_all();
 
     RCLCPP_INFO(this->get_logger(), "Enabling to left motors");
     left_leg_motors.enable_all();
-
-
+    left_leg_motors.send_all_zero();
+    left_leg_motors.read_all();
   }
 
   void home()
@@ -189,20 +197,22 @@ class MotorController : public rclcpp::Node
     right_pitch.run_to_home(0.5);
   }
 
-  void set_constants()
+  void set_position_constants()
   {
     // Set constants
-    left_roll.set_constants(30.0, 0.5);
-    left_pitch.set_constants(10.0, 0.5);
-    left_slide.set_constants(20.0, 0.0);
-    left_inner_ankle.set_constants(0.2, 0.1);
-    left_outer_ankle.copy_constants(&left_inner_ankle);
+      left_roll.set_constants(100.0, 3.0);
+      left_pitch.set_constants(100.0, 3.0);
+      left_slide.set_constants(2.0, 1.0);
 
-    right_roll.copy_constants(&left_roll);
-    right_pitch.copy_constants(&left_pitch);
-    right_slide.copy_constants(&right_slide);
-    right_inner_ankle.copy_constants(&left_inner_ankle);
-    right_outer_ankle.copy_constants(&left_inner_ankle);
+      left_inner_ankle.set_position_limits(-0.45, 0.7);
+      left_inner_ankle.set_constants(20.0, 1.0);
+      left_outer_ankle.copy_constants(&left_inner_ankle);
+
+      right_roll.copy_constants(&left_roll);
+      right_pitch.copy_constants(&left_pitch);
+      right_slide.copy_constants(&left_slide);
+      right_inner_ankle.copy_constants(&left_inner_ankle);
+      right_outer_ankle.copy_constants(&left_inner_ankle);
   }
 
   // Position control callback
@@ -248,7 +258,7 @@ class MotorController : public rclcpp::Node
 
       // Adjust for slide
       if(i == 2 || i == 7){
-        maximum_position_change_rads = 10.0;
+        maximum_position_change_rads = 15.0;
       }
 
       float target_difference = position_goals[i] - msg->data[i];
@@ -345,20 +355,9 @@ class MotorController : public rclcpp::Node
     { 
       RCLCPP_INFO_STREAM(this->get_logger(), "Sending position goals");
 
-      // set constnats
-      // TODO: Figure out why it only works here
-      left_roll.set_constants(150.0, 2.0);
-      left_pitch.set_constants(100.0, 2.0);
-      left_slide.set_constants(10.0, 0.0);
-      // left_slide.set_constants(0.0, 0.0);
-      left_inner_ankle.set_constants(10.0, 1.0);
-      left_outer_ankle.copy_constants(&left_inner_ankle);
-
-      right_roll.copy_constants(&left_roll);
-      right_pitch.copy_constants(&left_pitch);
-      right_slide.copy_constants(&left_slide);
-      right_inner_ankle.copy_constants(&left_inner_ankle);
-      right_outer_ankle.copy_constants(&left_inner_ankle);
+      // Set position control constants
+      // NOTE: Might be a bug
+      set_position_constants();
 
       // Send position goals
       right_roll.send_position_goal(position_goals[0]);
@@ -399,7 +398,7 @@ class MotorController : public rclcpp::Node
     // Check if we have violated our watchdog timer and disable motors
     if(time_delta > control_timout_ms)
     {
-      RCLCPP_WARN(this->get_logger(), "Control message watchdog timer has run out, disabling motors!");
+      // RCLCPP_WARN(this->get_logger(), "Control message watchdog timer has run out, disabling motors!");
 
       // Disable the robot
       control_mode = disabled;
@@ -477,7 +476,7 @@ class MotorController : public rclcpp::Node
   ControlMode control_mode;
   std::vector<float> position_goals{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   std::vector<float> torque_goals;
-  float maximum_position_change_rads = 0.3; // Maximum instant position change
+  float maximum_position_change_rads = 1.0; // Maximum instant position change
 
   // Watchdog variables
   std::chrono::steady_clock::time_point last_msg_time;
@@ -513,6 +512,7 @@ int main(int argc, char * argv[])
   auto motor_controller = std::make_shared<MotorController>();
   motor_controller.get()->start_read_threads();
 
+  RCLCPP_INFO(motor_controller.get()->get_logger(), "Threads started, spinning..");
   rclcpp::spin(motor_controller);
 
   // Disable motors and shut down

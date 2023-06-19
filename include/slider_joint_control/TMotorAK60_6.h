@@ -7,17 +7,7 @@
 class TMotorAK60_6 : public TMotor
 {
     protected:
-        // Motor constants
-        const float P_MIN = -12.5;
-        const float P_MAX = 12.5;
-        const float V_MIN = -41.87;
-        const float V_MAX = 41.87;
-        const float T_MIN = -9;
-        const float T_MAX = 9;
-        const float KP_MIN = 0;
-        const float KP_MAX = 500;
-        const float KD_MIN = 0;
-        const float KD_MAX = 5;
+
 
     public:
         TMotorAK60_6(string joint_name, int can_id){
@@ -30,5 +20,19 @@ class TMotorAK60_6 : public TMotor
             this->motor_type = "TMotorAK60_6";
 
             this->can_id = can_id;
+
+            // Motor constants
+            this->P_MIN = -12.5;
+            this->P_MAX = 12.5;
+            this->V_MIN = -41.87;
+            this->V_MAX = 41.87;
+            this->T_MIN = -9;
+            this->T_MAX = 9;
+            this->KP_MIN = 0;
+            this->KP_MAX = 500;
+            this->KD_MIN = 0;
+            this->KD_MAX = 5;
+
+            this->INTERNAL_GEAR_RATIO = 6;
         }
 };

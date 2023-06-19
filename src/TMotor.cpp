@@ -102,9 +102,9 @@ void TMotor::unpack_motor_response(uint8_t* data, float &p, float &v, float &i){
 
     // Converts to floats
     // I don't really like putting the zero offset at this level, but here we are
-    p = uint_to_float(p_int, P_MIN, P_MAX, 16) - this->zero_offset;
-    v = uint_to_float(v_int, V_MIN, V_MAX, 12);
-    i = uint_to_float(i_int, T_MIN, T_MAX, 12);
+    p = (uint_to_float(p_int, P_MIN, P_MAX, 16) - this->zero_offset) * this->inverted;
+    v = uint_to_float(v_int, V_MIN, V_MAX, 12) * this->inverted;
+    i = uint_to_float(i_int, T_MIN, T_MAX, 12) * this->inverted;
 }
 
 // =========== SET FUNCTIONS
@@ -122,7 +122,39 @@ void TMotor::set_socket(int socket){
 
 // Sets the zero offset for the motor
 void TMotor::set_zero_offset(float zero_offset){
+    // cout << "Start zero" << endl;
+    // Depending on the motor type, figure out if it has started within it's zero window
     this->zero_offset = zero_offset;
+
+    // Apply offset, needed for encoder overrun offset
+    this->position -= zero_offset;
+
+    // The offset tolerance we allow the motor to be within before assuming
+    // we've overrun the magnetic encoder
+    float const OFFSET_TOLERANCE_RADS = (6.2831 / this->INTERNAL_GEAR_RATIO) * 1.0; 
+ 
+    // cout << this->joint_name << endl;
+    // cout << this->position << endl;
+
+    // A single motor turn, measured at the gearbox output
+    // TODO: this might cast to int?
+    float const ONE_MOTOR_TURN_RADS = 6.2831 / this->INTERNAL_GEAR_RATIO;
+
+    // cout << this->INTERNAL_GEAR_RATIO << endl;
+    // cout << this->T_MIN << endl;
+
+    // Check if position has been set and if so, account for encoder overrun
+    // TODO: throw an error?
+    // TODO: Check that these are applied the right way around
+    if(!std::isnan(this->position)){
+        if(this->position < -OFFSET_TOLERANCE_RADS) {
+            //this->zero_offset -= ONE_MOTOR_TURN_RADS;
+        }
+
+        if(this->position > OFFSET_TOLERANCE_RADS) {
+            //this->zero_offset += ONE_MOTOR_TURN_RADS;
+        }
+    }
 }
 
 // Gets the zero offset for the motor
@@ -149,10 +181,13 @@ void TMotor::copy_constants(TMotor *motor){
 }
 
 void TMotor::invert(){
-    this->MIN = -this->MAX;
-    this->MAX = -this->MIN;
+    this->inverted = -this->inverted;
 
-    this->transmission_ratio = -this->transmission_ratio;
+    // TODO: Fix this
+    //this->MIN = -this->MAX;
+    //this->MAX = -this->MIN;
+
+    // this->transmission_ratio = -this->transmission_ratio;
 }
 
 // =========== GET FUNCTIONS
@@ -206,8 +241,8 @@ void TMotor::send_enable(){
 
     this->read_motor_response();
 
-    cout << "Sent enable: " << this->joint_name << endl;
-    cout << this->kP << endl;
+    // cout << "Sent enable: " << this->joint_name << endl;
+    // cout << this->kP << endl;
 }
 
 // Send the disable command
@@ -263,7 +298,7 @@ void TMotor::send_position_goal(float position, float torque_feedforward){
     // cout << "Sending position goal" << endl;
     // cout << this->kP << endl;
 
-    this->send_motor_cmd(position + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward);
+    this->send_motor_cmd(position * this->inverted + this->zero_offset, 0.0, this->kP, this->kD, torque_feedforward * this->inverted);
 
     // Read motor's position, velocity and torque response
     //this->read_motor_response();
@@ -271,7 +306,7 @@ void TMotor::send_position_goal(float position, float torque_feedforward){
 
 // Sends a velocity goal
 void TMotor::send_velocity_goal(float velocity, float torque_feedforward){
-    this->send_motor_cmd(0.0, velocity, 0.0, this->kD, torque_feedforward);
+    this->send_motor_cmd(0.0, velocity * this->inverted, 0.0, this->kD, torque_feedforward * this->inverted);
 
     // Read motor's position, velocity and torque response
     // this->read_motor_response();
@@ -279,7 +314,7 @@ void TMotor::send_velocity_goal(float velocity, float torque_feedforward){
 
 // Sends a torque goal
 void TMotor::send_torque_goal(float torque){
-    this->send_motor_cmd(0.0, 0.0, 0.0, 0.0, torque);
+    this->send_motor_cmd(0.0, 0.0, 0.0, 0.0, torque * this->inverted);
 
     // Read motor's position, velocity and torque response
     //this->read_motor_response();
@@ -335,14 +370,14 @@ void TMotor::run_to_home(float speed){
         float progress = (float) i / steps;
         float desired_position = start_pos - progress * (start_pos - this->zero_offset);
 
-        //cout << progress << endl;
+        // cout << progress << endl;
         // cout << desired_position << endl;
 
         this->send_motor_cmd(desired_position, 0.0, 200.0, 0.5, 0.0);
         this->read_motor_response();
 
         //cout << this->position << endl;
-        ///cout << endl;
+        // cout << endl;
 
         usleep(second / loop_Hz);
     }

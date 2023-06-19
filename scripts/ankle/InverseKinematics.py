@@ -18,14 +18,14 @@ def calcGamma(alpha, beta, motor = 'right'):
                 gamma = (float)  : The required position of the motor in radians
     """
     # position of the connection with no pitch or roll
-    Al0_x = 64.0
-    Al0_y = 103.0
+    Al0_x = 48.94180
+    Al0_y = 54.33013
     Al0_z = 0.0
  
     # position of the motors
-    Ml_x = 54.0
-    Ml_y = 60.0
-    Ml_z = 196.0
+    Ml_x = 57.800
+    Ml_y = 60.000
+    Ml_z = 186.000
 
     if motor =='left':
         # poscition of the connection with the desired pitch and roll
@@ -95,7 +95,7 @@ def calcGammaPaper(alpha, beta , motor):
 
 def calcBz(A_x,A_y,A_z,H_x,M_y,M_z):
 
-    L = 195.0
+    L = 192.5
     R = 40.0
 
     t2 = A_x**2;

@@ -48,30 +48,32 @@ class MinimalPublisher(Node):
         
         print(self.joint_states.position)
         
-        self.move_time = 5.0 # seconds
+        self.move_time = 2.0 # seconds
         self.move_steps = int(100.0 * self.move_time)
 
         self.initial_position = np.array(self.joint_states.position)
 
+        starting_position = np.array([0.0, # Right_Roll
+            0.0, # Right_Pitch
+            0.0, # Right_Slide
+            0.0, # Right_Foot_Roll
+            0.0, # Right_Foot_Pitch
+
+            0.0, # Left_Roll
+            0.0, # Left_Pitch
+            0.0, # Left_slide
+            0.0, # Left_Foot_Pitch
+            0.0]) # check for user input
+
         for t in range(0, self.move_steps):
             factor = 1 - t / self.move_steps
-            print(factor)
-            new_states = factor * self.initial_position
-            # print(new_states)
+            # print(factor)
+            new_states = (1.0 - factor) * starting_position + factor * self.initial_position
+            print(new_states)
 
-            roll = new_states[9]
-            pitch = new_states[8]
-
-            new_states[8] = roll
-            new_states[9] = pitch
-
-            # self.pub_joint_states(new_states)
+            self.pub_joint_states(new_states)
             time.sleep(0.01)
 
-
-        # print(self.joint_states.position[2])
-
-        self.get_logger().info("Starting the test")
 
         self.timer_period = 0.01
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -94,30 +96,30 @@ class MinimalPublisher(Node):
         # Increment relative timer
         self.t += self.timer_period
 
-        # Find current frequency
-        freq_hz = np.interp(self.t, 
-            [0, self.sweep_time_s], 
-            [self.start_frequency_hz, self.end_frequency_hz])
+        # # Find current frequency
+        # freq_hz = np.interp(self.t, 
+        #     [0, self.sweep_time_s], 
+        #     [self.start_frequency_hz, self.end_frequency_hz])
 
-        # freq_hz = 2
-        freq_rads = freq_hz * 2 * np.pi
+        # # freq_hz = 2
+        # freq_rads = freq_hz * 2 * np.pi
 
-        # Get target angle
-        angle = self.amplitude_rad * sin(self.t * freq_rads)
-        length = 0.05 * sin(self.t * freq_rads)
+        # # Get target angle
+        # angle = self.amplitude_rad * sin(self.t * freq_rads)
+        # length = 0.05 * sin(self.t * freq_rads)
 
         msg = Float32MultiArray()
         msg.data = [0.0, # Right_Roll
                     0.0, # Right_Pitch
                     0.0, # Right_Slide
-                    0.0, # Right_Foot_Roll
-                    0.0, # Right_Foot_Pitch
+                    0.2 * sin(-self.t * 3.0), # Right_Foot_Roll
+                    -0.2 * cos(-self.t * 3.0), # Right_Foot_Pitch
 
                     0.0, # Left_Roll
                     0.0, # Left_Pitch
                     0.0, # Left_slide
-                    0.0, # Left_Foot_Pitch
-                    0.0] # check for user input
+                    0.2 * sin(self.t * 3.0), # Left_Foot_Roll
+                    0.2 * cos(self.t * 3.0)] # Left_Foot_Pitch
         # print(self.initial_position)
         print(msg.data)
 
