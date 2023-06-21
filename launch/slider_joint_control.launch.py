@@ -18,7 +18,7 @@ def generate_launch_description():
 
     joint_controller_node = Node(
         package='slider_joint_control',
-        executable='slider_joint_controller.py',
+        executable='joint_control',
         name='joint_controller',
         output='screen'
     )

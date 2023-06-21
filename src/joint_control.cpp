@@ -12,7 +12,7 @@ using namespace std;
 class JointController : public rclcpp::Node
 {   
     private:
-        const float SLIDE_TRANSMISSION_RATIO = 0.013;
+        const float SLIDE_TRANSMISSION_RATIO = 0.0085;
 
         const int RIGHT_ROLL_ID = 0;
         const int RIGHT_PITCH_ID = 1;
@@ -119,6 +119,9 @@ class JointController : public rclcpp::Node
     void motor_state_callback (const sensor_msgs::msg::JointState::ConstPtr& motor_state)
     {
         sensor_msgs::msg::JointState joint_state;
+
+        // Make header
+        joint_state.header.stamp = this->get_clock()->now();
 
         // Resize arrays
         joint_state.name.resize(10);
