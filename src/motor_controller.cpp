@@ -200,9 +200,12 @@ class MotorController : public rclcpp::Node
   void set_position_constants()
   {
     // Set constants
-      left_roll.set_constants(100.0, 3.0);
-      left_pitch.set_constants(100.0, 3.0);
-      left_slide.set_constants(2.0, 1.0);
+      left_roll.set_constants(300.0, 5.0);
+      left_pitch.set_constants(50.0, 5.0);
+      left_slide.set_constants(3.7, 0.5);
+      left_slide.set_position_limits(-8.0, 8.0);
+      right_slide.set_constants(3.7, 0.5);
+      right_slide.set_position_limits(-8.0, 8.0);
 
       left_inner_ankle.set_position_limits(-0.45, 0.7);
       left_inner_ankle.set_constants(20.0, 1.0);
@@ -210,7 +213,6 @@ class MotorController : public rclcpp::Node
 
       right_roll.copy_constants(&left_roll);
       right_pitch.copy_constants(&left_pitch);
-      right_slide.copy_constants(&left_slide);
       right_inner_ankle.copy_constants(&left_inner_ankle);
       right_outer_ankle.copy_constants(&left_inner_ankle);
   }
@@ -326,7 +328,7 @@ class MotorController : public rclcpp::Node
     std::stringstream ss;
     ss << "Current position targets: ";
     std::copy(position_goals.begin(), position_goals.end(), std::ostream_iterator<float>(ss, " "));
-    RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
+    // RCLCPP_INFO_STREAM(this->get_logger(), ss.str());
 
     // ==== CONTROL MODES
     if(control_mode == error){
@@ -362,7 +364,7 @@ class MotorController : public rclcpp::Node
       // Send position goals
       right_roll.send_position_goal(position_goals[0]);
       right_pitch.send_position_goal(position_goals[1]);
-      right_slide.send_position_goal(position_goals[2]);
+      right_slide.send_position_goal(-position_goals[2]); // bad
       // right_slide.send_position_goal(0.0);
       right_inner_ankle.send_position_goal(position_goals[3]);
       right_outer_ankle.send_position_goal(position_goals[4]);

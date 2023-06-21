@@ -92,7 +92,7 @@ class MinimalPublisher(Node):
         self.get_logger().info("Publishing")
 
     def timer_callback(self):
-        print("loop op")
+        # print("loop op")
         # Increment relative timer
         self.t += self.timer_period
 
@@ -111,15 +111,15 @@ class MinimalPublisher(Node):
         msg = Float32MultiArray()
         msg.data = [0.0, # Right_Roll
                     0.0, # Right_Pitch
-                    0.0, # Right_Slide
-                    0.2 * sin(-self.t * 3.0), # Right_Foot_Roll
-                    -0.2 * cos(-self.t * 3.0), # Right_Foot_Pitch
+                    0.01 - 0.00 * sin(self.t * 1.0) + target, # Right_Slide
+                    0.0 * sin(-self.t * 3.0), # Right_Foot_Roll
+                    0.0 * cos(-self.t * 3.0), # Right_Foot_Pitch
 
                     0.0, # Left_Roll
                     0.0, # Left_Pitch
-                    0.0, # Left_slide
-                    0.2 * sin(self.t * 3.0), # Left_Foot_Roll
-                    0.2 * cos(self.t * 3.0)] # Left_Foot_Pitch
+                    0.01 - 0.00 * sin(self.t * 1.0) + target, # Left_slide
+                    0.0 * sin(self.t * 3.0), # Left_Foot_Roll
+                    0.0 * cos(self.t * 3.0)] # Left_Foot_Pitch
         # print(self.initial_position)
         print(msg.data)
 
