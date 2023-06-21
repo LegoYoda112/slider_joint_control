@@ -119,7 +119,7 @@ class JointController : public rclcpp::Node
     void motor_state_callback (const sensor_msgs::msg::JointState::ConstPtr& motor_state)
     {
         sensor_msgs::msg::JointState joint_state;
-
+        
         // Make header
         joint_state.header.stamp = this->get_clock()->now();
 

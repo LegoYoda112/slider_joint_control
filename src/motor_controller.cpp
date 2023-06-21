@@ -130,7 +130,7 @@ class MotorController : public rclcpp::Node
   {
     right_roll.set_zero_offset(-0.02);
     right_pitch.set_zero_offset(-0.15);
-    right_slide.set_zero_offset(-0.48 - 0.5);
+    right_slide.set_zero_offset(-0.48);
     right_inner_ankle.set_zero_offset(0.3725 - 0.1808);
     right_outer_ankle.set_zero_offset(0.5316 + 0.1808);
 

@@ -108,14 +108,6 @@ class MinimalPublisher(Node):
         # angle = self.amplitude_rad * sin(self.t * freq_rads)
         # length = 0.05 * sin(self.t * freq_rads)
 
-        if(round(self.t) % 2):
-            target = 0.04
-        else:
-            target = 0.0
-
-        # print(round(self.t))
-        
-
         msg = Float32MultiArray()
         msg.data = [0.0, # Right_Roll
                     0.0, # Right_Pitch
